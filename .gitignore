@@ -11,3 +11,4 @@ examples/**/server-shielded/
 examples/**/dist-*/
 examples/**/server-*/
 examples/**/*-server/
+.bc-tmp-*/

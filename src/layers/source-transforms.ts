@@ -16,6 +16,7 @@ export interface TransformState {
   sealed: string[];
   dispatched: string[];
   channelsRewritten: number;
+  ipcRewritten: number;
   removedStrings: string[];
   renamed: string[];
   warnings: string[];

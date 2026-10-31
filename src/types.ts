@@ -49,6 +49,8 @@ export interface LayerConfig {
   dynamicChannels: boolean;
   /** Computed imports + runtime dispatch table for protected regions. */
   dynamicGraph: boolean;
+  /** Electron: rewrite literal IPC channel names into computed ones. */
+  ipcChannels: boolean;
   decoys: DecoyConfig;
   /** Fail-safe runtime self-check. Does NOT defend REA's static path. */
   integrity: boolean;

@@ -13,6 +13,7 @@ export function layerDefaults(preset: Preset): LayerConfig {
     stringIndirection: false,
     dynamicChannels: false,
     dynamicGraph: false,
+    ipcChannels: false,
     decoys: { enabled: false, count: 0 },
     integrity: false,
   };

@@ -13,6 +13,9 @@ import { runPipeline } from "./pipeline.js";
 import { formatApplied, formatMetrics } from "./report.js";
 import { compareStatic, tryRea } from "./harness/rea-measure.js";
 import { runRegression } from "./harness/regression.js";
+import { rewriteIpcChannels } from "./electron/ipc.js";
+import { compileToBytecode } from "./electron/bytecode.js";
+import { recommendedFuses, applyFuses } from "./electron/fuses.js";
 
 const require = createRequire(import.meta.url);
 
@@ -57,6 +60,7 @@ module.exports = {
     stringIndirection: true,
     dynamicChannels: true,
     dynamicGraph: false, // max default on
+    ipcChannels: false, // Electron: rewrite literal IPC channel names
     decoys: { enabled: true, count: 5 },
     integrity: false,
   },
@@ -265,6 +269,49 @@ program
         "\n  NOTE: preset=max adds latency/CPU/size cost (CFF, dead code, sealing, dispatch).",
       );
     console.log(HONEST_LIMITS);
+  });
+
+
+const electron = program
+  .command("electron")
+  .description("Electron-specific hardening (IPC rewriting, V8 bytecode, fuses)");
+
+electron
+  .command("ipc <input>")
+  .description("rewrite literal IPC channel names into runtime-computed ones")
+  .option("--out <file>", "write result here (default: overwrite input)")
+  .action((input, opts) => {
+    const src = readFileSync(input, "utf8");
+    const r = rewriteIpcChannels(src);
+    const out = opts.out ?? input;
+    writeFileSync(out, r.code);
+    console.log(`reashield electron ipc: rewrote ${r.rewritten} channel(s) -> ${path.relative(process.cwd(), out)}`);
+    if (r.channels.length) console.log(`  channels: ${[...new Set(r.channels)].join(", ")}`);
+  });
+
+electron
+  .command("bytecode <input>")
+  .description("compile a JS file to V8 bytecode (.jsc) + a loader")
+  .requiredOption("--out <file>", "output .jsc path")
+  .action(async (input, opts) => {
+    const r = await compileToBytecode(input, opts.out);
+    console.log(`reashield electron bytecode:`);
+    console.log(`  jsc    -> ${path.relative(process.cwd(), r.jscPath)}`);
+    console.log(`  loader -> ${path.relative(process.cwd(), r.loaderPath)}`);
+    console.log("  NOTE: V8 bytecode is version-specific — compile with your target Electron's Node/V8.");
+  });
+
+electron
+  .command("fuses <binary>")
+  .description("apply REAShield's recommended defensive fuses to an Electron binary")
+  .option("--dry", "print the recommended fuses without flipping")
+  .action(async (binary, opts) => {
+    if (opts.dry) {
+      console.log("recommended fuses:", JSON.stringify(recommendedFuses(), null, 2));
+      return;
+    }
+    const rec = await applyFuses(binary);
+    console.log("reashield electron fuses: applied", JSON.stringify(rec));
   });
 
 program.parseAsync(process.argv);

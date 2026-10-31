@@ -14,6 +14,7 @@ import { injectDecoys } from "./layers/decoys.js";
 import { obfuscate } from "./layers/obfuscate.js";
 import { stripSourceMapComments } from "./layers/strip-sourcemaps.js";
 import { wrapIntegrity } from "./layers/integrity.js";
+import { rewriteIpcChannels } from "./electron/ipc.js";
 import {
   serverFiles as buildServerFiles,
   clientRuntimeSource,
@@ -46,6 +47,7 @@ export function newState(
     sealed: [],
     dispatched: [],
     channelsRewritten: 0,
+    ipcRewritten: 0,
     removedStrings: [],
     renamed: [],
     warnings: [],
@@ -62,7 +64,13 @@ export function runSourceTransforms(source: string, state: TransformState): stri
   if (state.config.layers.dynamicGraph) dynamicGraph(ast, fns, state);
   if (state.config.layers.dynamicChannels) dynamicChannels(ast, state);
   homogenizeProtected(ast, state);
-  return generate(ast).code;
+  let out = generate(ast).code;
+  if (state.config.layers.ipcChannels) {
+    const r = rewriteIpcChannels(out);
+    out = r.code;
+    state.ipcRewritten += r.rewritten;
+  }
+  return out;
 }
 
 /**
@@ -78,14 +86,16 @@ export function transformModuleSource(
     state.sealed.length +
     state.dispatched.length +
     state.renamed.length +
-    state.channelsRewritten;
+    state.channelsRewritten +
+    state.ipcRewritten;
   const code = runSourceTransforms(source, state);
   const after =
     state.relocated.length +
     state.sealed.length +
     state.dispatched.length +
     state.renamed.length +
-    state.channelsRewritten;
+    state.channelsRewritten +
+    state.ipcRewritten;
   return after > before ? code : null;
 }
 

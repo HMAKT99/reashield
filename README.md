@@ -166,6 +166,38 @@ Hardening must never change what your program does. The bundled example
 — including relocated and sealed code, exercised through an in-process server —
 and asserts decoys never execute. Run it with `npm run example:test`.
 
+## Electron hardening
+
+For Electron apps, REAShield adds an Electron-specific path (pair it with the JS
+pillars above):
+
+- **Dynamic IPC channel rewriting** — turns literal `ipcMain`/`ipcRenderer`/
+  `webContents` channel strings into runtime-computed ones. REA leaves
+  dynamically-computed IPC names **unresolved by design**, so this directly
+  starves its graph. Value-preserving: both sides compute the identical string.
+  Enable with `layers.ipcChannels: true`, or run standalone:
+  ```bash
+  npx reashield electron ipc src/main.js --out dist/main.js
+  ```
+- **V8 bytecode** (`bytenode`) — ship `.jsc` so the asar holds no readable JS:
+  ```bash
+  npx reashield electron bytecode dist/main.js --out dist/main.jsc
+  ```
+  **Caveat:** V8 bytecode is tied to the exact V8 version — compile with your
+  target Electron's Node/V8, or the `.jsc` will not load. Raises cost against
+  automated static JS analysis; it is not unbreakable.
+- **Defensive fuses** (`@electron/fuses`) — flip the packaged binary to the
+  hardened defaults (disable `RunAsNode`, Node CLI inspect args and
+  `NODE_OPTIONS`; enable embedded ASAR integrity validation and
+  `OnlyLoadAppFromAsar`). Run after packaging, in your `afterPack`:
+  ```bash
+  npx reashield electron fuses path/to/YourApp   # --dry to preview
+  ```
+
+`bytenode` and `@electron/fuses` are **optional** dependencies, loaded only when
+you use these commands. Programmatic API: `import { rewriteIpcChannels,
+compileToBytecode, recommendedFuses, applyFuses } from "reashield/electron"`.
+
 ## Durability: measure, don't trust
 
 REA ships often. `reashield test` compares your own before/after artifact and
@@ -181,9 +213,11 @@ protected-name leakage, secret-string removal).
 
 ## Roadmap
 
-WASM compile backend · Electron path (bytenode, defensive fuses, ASAR integrity,
-native dynamic IPC) · bundler plugins (esbuild/rollup/vite) · broader server
-adapters + auth helpers · summary-view-tuned decoys.
+✅ Bundler plugins (esbuild/Rollup/Vite) · ✅ Electron path (bytenode, defensive
+fuses, dynamic IPC rewriting).
+
+Next: WASM compile backend · broader server adapters + auth helpers ·
+summary-view-tuned decoys · ASAR packaging integration helpers.
 
 ## License
 

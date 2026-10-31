@@ -5,6 +5,7 @@ export default defineConfig({
     index: "src/index.ts",
     cli: "src/cli.ts",
     plugins: "src/plugins/index.ts",
+    electron: "src/electron/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
