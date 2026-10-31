@@ -1,0 +1,11 @@
+{
+  "name": "sample-package",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tiny real package used to prove REAShield hardening (behavior-preserving) against measurement.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test test"
+  }
+}

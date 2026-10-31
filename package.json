@@ -1,0 +1,61 @@
+{
+  "name": "reashield",
+  "version": "0.1.0",
+  "description": "Drop-in defensive hardening that starves automated, agent-driven reverse engineering (e.g. REA) of your own shipped JavaScript/npm artifact. Raises cost; never claims impossibility.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "reashield": "dist/cli.js"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "demo": "cd examples/sample-package && node ../../dist/cli.js test",
+    "example:test": "node --test examples/sample-package/test/sample.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "reverse-engineering",
+    "hardening",
+    "obfuscation",
+    "defensive",
+    "rea",
+    "shield",
+    "anti-tamper"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@babel/generator": "^7.25.0",
+    "@babel/parser": "^7.25.0",
+    "@babel/traverse": "^7.25.0",
+    "@babel/types": "^7.25.0",
+    "commander": "^12.1.0",
+    "esbuild": "^0.23.0",
+    "javascript-obfuscator": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/babel__generator": "^7.6.8",
+    "@types/babel__traverse": "^7.20.6",
+    "@types/node": "^22.5.0",
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0"
+  },
+  "optionalDependencies": {}
+}

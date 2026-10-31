@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+# build outputs produced by reashield
+dist-shielded/
+server-shielded/
+examples/**/dist-shielded/
+examples/**/server-shielded/
+.reashield-cache/

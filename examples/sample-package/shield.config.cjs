@@ -1,0 +1,30 @@
+module.exports = {
+  input: "src/index.js",
+  output: "dist-shielded",
+  preset: "balanced",
+  protect: [
+    { name: "licenseCheck", mode: "relocate" },
+    { name: "sealedCalc", mode: "seal" },
+    { name: "pricingLogic", mode: "wasm" },
+    { name: "featureGate", mode: "obfuscate" },
+  ],
+  server: {
+    enabled: true,
+    out: "server-shielded",
+    adapter: "generic",
+    endpoint: "/__s",
+    keyEndpoint: "/__s/k",
+    decoyCalls: false,
+  },
+  polymorphic: { enabled: true, seed: "auto" },
+  layers: {
+    stripSourceMaps: true,
+    flattenBundle: true,
+    obfuscate: true,
+    stringIndirection: true,
+    dynamicChannels: true,
+    dynamicGraph: false,
+    decoys: { enabled: true, count: 5 },
+    integrity: false,
+  },
+};

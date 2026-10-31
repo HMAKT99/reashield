@@ -1,0 +1,34 @@
+# Durability guarantee: rebuild the hardened artifact and re-measure it against a
+# matrix of rea-agents releases, failing if a newer REA recovers more than the
+# committed baseline allows. This is what keeps the shield strong as REA ships.
+name: reashield-regression
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # weekly
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Pin the REA versions you commit a baseline against. `latest` tracks drift.
+        rea: ["latest"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run build
+      # Harden the example and run the static + (optional) REA measurement.
+      # `reashield test` exits non-zero on regression or secret leakage.
+      - name: Harden + measure
+        working-directory: examples/sample-package
+        run: node ../../dist/cli.js test --rea
+        env:
+          REA_VERSION: ${{ matrix.rea }}
