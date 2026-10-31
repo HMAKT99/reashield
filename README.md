@@ -104,6 +104,49 @@ module.exports = {
   flattening, dead-code injection, self-defending, ~15 decoys. Adds latency /
   CPU / size — `doctor` flags it.
 
+## Bundler plugins (run hardening inside your existing build)
+
+Instead of the CLI, harden as part of an esbuild / Rollup / Vite build. The
+plugin runs the source-level pillars per module, then finalizes each output
+chunk (decoys + obfuscation + source-map stripping + client-runtime injection)
+and writes the server skeleton. `flattenBundle` is a no-op here — your bundler
+already bundles; the plugin hardens its output. Configure the relocated/sealed
+transport once via the global the plugin installs:
+`globalThis.__configureShield({ transport, keyTransport })` (or let the default
+`fetch` transport call your endpoints).
+
+```js
+// rollup.config.mjs
+import { reashieldRollup } from "reashield/plugins";
+export default {
+  input: "src/index.js",
+  output: { dir: "dist", format: "esm" },
+  plugins: [reashieldRollup({ configPath: "shield.config.cjs" })],
+};
+```
+
+```js
+// vite.config.mjs  (Vite consumes the Rollup plugin interface)
+import { reashieldVite } from "reashield/plugins";
+export default { plugins: [reashieldVite({ configPath: "shield.config.cjs" })] };
+```
+
+```js
+// esbuild build script
+import { build } from "esbuild";
+import { reashieldEsbuild } from "reashield/plugins";
+await build({
+  entryPoints: ["src/index.js"],
+  bundle: true,
+  outdir: "dist",
+  plugins: [reashieldEsbuild({ configPath: "shield.config.cjs" })],
+});
+```
+
+Each plugin accepts `{ config | configPath, cwd, seed }`. Note: the plugin
+hardens every emitted JS chunk, so obfuscation cost applies to the whole output
+— scope your build accordingly.
+
 ## The generated server skeleton
 
 `relocate` and `seal` emit a `server-shielded/` directory holding the **real

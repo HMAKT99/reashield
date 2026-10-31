@@ -10,3 +10,4 @@ examples/**/server-shielded/
 .reashield-cache/
 examples/**/dist-*/
 examples/**/server-*/
+examples/**/*-server/

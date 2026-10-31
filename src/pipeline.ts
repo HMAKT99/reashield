@@ -1,28 +1,16 @@
 import { readFileSync } from "node:fs";
-import { createHash } from "node:crypto";
 import path from "node:path";
 import type { AppliedLayer, BuildArtifacts, ShieldConfig } from "./types.js";
 import { createPolymorph } from "./polymorph.js";
-import { parseSource, generate } from "./analyze/extract.js";
-import {
-  relocate,
-  seal,
-  dynamicGraph,
-  dynamicChannels,
-  homogenizeProtected,
-  type TransformState,
-} from "./layers/source-transforms.js";
-import { noteWasmFallback } from "./layers/wasm.js";
 import { flatten } from "./layers/bundle-flatten.js";
-import { injectDecoys } from "./layers/decoys.js";
-import { obfuscate } from "./layers/obfuscate.js";
-import { stripSourceMapComments } from "./layers/strip-sourcemaps.js";
-import { wrapIntegrity } from "./layers/integrity.js";
-import { serverFiles as buildServerFiles } from "./runtime-templates.js";
-
-function deriveWireKey(seed: string): string {
-  return createHash("sha256").update(seed + "::wire").digest().subarray(0, 16).toString("base64");
-}
+import {
+  deriveWireKey,
+  newState,
+  runSourceTransforms,
+  finalizeCode,
+  buildServer,
+  needsClientRuntime,
+} from "./engine.js";
 
 export interface RunOptions {
   config: ShieldConfig;
@@ -32,6 +20,7 @@ export interface RunOptions {
   format?: "esm" | "cjs";
 }
 
+/** Whole-entry hardening: source transforms -> flatten -> finalize -> server. */
 export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
   const { config, cwd } = opts;
   const seed = opts.seed ?? config.polymorphic.seed;
@@ -43,31 +32,10 @@ export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
   const source = readFileSync(inputPath, "utf8");
 
   const applied: AppliedLayer[] = [];
-  const { ast, fns } = parseSource(source);
+  const state = newState(config, poly);
 
-  const state: TransformState = {
-    config,
-    poly,
-    handlers: {},
-    keys: {},
-    opMap: {},
-    relocated: [],
-    sealed: [],
-    dispatched: [],
-    channelsRewritten: 0,
-    removedStrings: [],
-    renamed: [],
-    warnings: [],
-    notes: [],
-  };
-
-  // ---- source-level pillars (operate before flattening) ----
-  relocate(ast, fns, state);
-  seal(ast, fns, state);
-  noteWasmFallback(state);
-  if (config.layers.dynamicGraph) dynamicGraph(ast, fns, state);
-  if (config.layers.dynamicChannels) dynamicChannels(ast, state);
-  homogenizeProtected(ast, state);
+  // ---- source-level pillars ----
+  let code = runSourceTransforms(source, state);
 
   applied.push({
     layer: "relocate",
@@ -102,9 +70,7 @@ export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
       cost: "none",
     });
 
-  let code = generate(ast).code;
-
-  // ---- flatten (collapse the import graph) ----
+  // ---- flatten (collapse the import graph; inject client runtime) ----
   if (config.layers.flattenBundle) {
     code = await flatten({
       entryCode: code,
@@ -113,7 +79,7 @@ export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
       endpoint: config.server.endpoint,
       keyEndpoint: config.server.keyEndpoint,
       wireKeyB64,
-      needsRuntime: state.relocated.length + state.sealed.length > 0,
+      needsRuntime: needsClientRuntime(state),
     });
     applied.push({
       layer: "flattenBundle",
@@ -123,86 +89,47 @@ export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
     });
   }
 
-  // ---- decoys (post-bundle so they survive tree-shaking) ----
-  let decoyNames: string[] = [];
-  if (config.layers.decoys.enabled && config.layers.decoys.count > 0) {
-    const r = injectDecoys(
-      code,
-      config.layers.decoys.count,
-      poly,
-      config.protect.map((p) => p.name),
-    );
-    code = r.code;
-    decoyNames = r.names;
+  // ---- decoys + obfuscate + strip maps + integrity ----
+  const fin = finalizeCode(code, state, { injectRuntime: false });
+  code = fin.code;
+
+  if (config.layers.decoys.enabled && config.layers.decoys.count > 0)
     applied.push({
       layer: "decoys",
       applied: true,
-      detail: `${decoyNames.length} inert decoy(s) injected`,
+      detail: `${fin.decoyNames.length} inert decoy(s) injected`,
       cost: "size",
     });
-  }
-
-  // ---- obfuscate (mangle + string indirection) ----
-  if (config.layers.obfuscate) {
-    code = obfuscate(
-      code,
-      config.preset,
-      poly.seed,
-      config.layers.stringIndirection,
-    );
+  if (config.layers.obfuscate)
     applied.push({
       layer: "obfuscate",
       applied: true,
       detail: `preset=${config.preset}, stringIndirection=${config.layers.stringIndirection}`,
       cost: config.preset === "max" ? "cpu" : "size",
     });
-  }
-
-  // ---- strip source maps ----
-  if (config.layers.stripSourceMaps) {
-    code = stripSourceMapComments(code);
+  if (config.layers.stripSourceMaps)
     applied.push({
       layer: "stripSourceMaps",
       applied: true,
       detail: "no .map, no sourceMappingURL",
       cost: "none",
     });
-  }
-
-  // ---- integrity (optional, off by default) ----
-  if (config.layers.integrity) {
-    code = wrapIntegrity(code);
+  if (config.layers.integrity)
     applied.push({
       layer: "integrity",
       applied: true,
       detail: "fail-safe anti-tamper (not an anti-static-RE layer)",
       cost: "cpu",
     });
-  }
-
-  // ---- server skeleton ----
-  let serverFiles: Record<string, string> = {};
-  const hasServer =
-    Object.keys(state.handlers).length + Object.keys(state.keys).length > 0;
-  if (config.server.enabled && hasServer) {
-    serverFiles = buildServerFiles({
-      adapter: config.server.adapter,
-      endpoint: config.server.endpoint,
-      keyEndpoint: config.server.keyEndpoint,
-      wireKeyB64,
-      handlers: state.handlers,
-      keys: state.keys,
-    });
-  }
 
   return {
     clientCode: code,
-    serverFiles,
+    serverFiles: buildServer(state, wireKeyB64),
     applied,
     opMap: state.opMap,
     relocated: state.relocated,
     sealed: state.sealed,
-    decoyNames,
+    decoyNames: fin.decoyNames,
     removedStrings: state.removedStrings,
   };
 }

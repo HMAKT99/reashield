@@ -4,12 +4,12 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     cli: "src/cli.ts",
+    plugins: "src/plugins/index.ts",
   },
   format: ["esm", "cjs"],
-  dts: { entry: "src/index.ts" },
+  dts: true,
   clean: true,
   sourcemap: false,
   target: "node20",
   shims: true,
-  banner: { js: "" },
 });

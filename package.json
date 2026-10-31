@@ -15,6 +15,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./plugins": {
+      "types": "./dist/plugins.d.ts",
+      "import": "./dist/plugins.js",
+      "require": "./dist/plugins.cjs"
     }
   },
   "files": [
@@ -28,7 +33,7 @@
     "demo": "cd examples/sample-package && node ../../dist/cli.js test",
     "example:test": "node --test examples/sample-package/test/sample.test.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test test/unit.test.mjs && node --test examples/sample-package/test/sample.test.mjs",
+    "test": "npm run build && node --test test/unit.test.mjs && node --test examples/sample-package/test/sample.test.mjs && node --test examples/sample-package/test/rollup-plugin.test.mjs",
     "e2e:http": "npm run build && node examples/sample-package/e2e-http.mjs",
     "prepublishOnly": "npm run build"
   },
@@ -57,8 +62,8 @@
     "@types/babel__generator": "^7.6.8",
     "@types/babel__traverse": "^7.20.6",
     "@types/node": "^22.5.0",
+    "rollup": "^4.67.2",
     "tsup": "^8.2.0",
     "typescript": "^5.5.0"
-  },
-  "optionalDependencies": {}
+  }
 }

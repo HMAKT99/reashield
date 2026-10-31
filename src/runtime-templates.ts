@@ -32,7 +32,14 @@ export function clientRuntimeSource(opts: {
   endpoint: string;
   keyEndpoint: string;
   wireKeyB64: string;
+  /** true: ESM `export function __configureShield` (library/flatten mode).
+   *  false: attach to globalThis (plugin mode; chunk-format agnostic). */
+  exportConfigure?: boolean;
 }): string {
+  const configureLine =
+    opts.exportConfigure === false
+      ? "globalThis.__configureShield = function(o){ return __shield.configure(o); };"
+      : "export function __configureShield(o){ return __shield.configure(o); }";
   return `
 ${encodeHelperSource(opts.wireKeyB64)}
 const __shield = (() => {
@@ -85,7 +92,7 @@ const __shield = (() => {
     },
   };
 })();
-export function __configureShield(o){ return __shield.configure(o); }
+${configureLine}
 `.trim();
 }
 
