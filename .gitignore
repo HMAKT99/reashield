@@ -8,3 +8,5 @@ server-shielded/
 examples/**/dist-shielded/
 examples/**/server-shielded/
 .reashield-cache/
+examples/**/dist-*/
+examples/**/server-*/
