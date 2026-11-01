@@ -13,3 +13,8 @@ examples/**/server-*/
 examples/**/*-server/
 .bc-tmp-*/
 *.tgz
+
+# python prototype generated outputs
+prototypes/python/example/*.shielded.py
+prototypes/python/example/*.server.py
+prototypes/python/**/__pycache__/
