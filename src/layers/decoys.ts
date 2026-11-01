@@ -1,32 +1,41 @@
 import type { Polymorph } from "../types.js";
 
 /**
- * Summary-view-tuned graph-flooding decoys.
+ * WS4 — coherent, misleading decoys.
  *
- * REA builds a graph then hands the agent a COMPACT SUMMARY to reason over. So
- * decoys are shaped to look *central* in that summary: grouped into fake
- * "feature" clusters with a hub that fans out to members, members that ring-
- * reference each other and the hub (high in/out degree), a fake entry that
- * references each hub, and plausible route/IPC/key strings — the exact signals
- * REA's feature-investigation workflows latch onto.
+ * Earlier decoys were inert noise. These are inert *fake features*: each cluster
+ * is a self-consistent chain (parse -> verify -> grant, etc.) with plausible
+ * config constants, route and IPC strings, so an LLM tracing REA's summary will
+ * confidently explain a feature that does not exist and clone the wrong thing.
  *
- * Every decoy is inert: guarded by a sentinel that is never set, so it never
- * runs; each bumps a tripwire counter *only if executed* — the tests assert the
- * counter stays 0. Injected AFTER bundling so they survive tree-shaking.
- *
- * Experimental: measure against REA, it can backfire (bundle size). Never
- * changes behavior.
+ * Still provably inert: guarded by a sentinel that is never set, each bumps a
+ * tripwire counter only if executed (tests assert it stays 0). Injected AFTER
+ * bundling so they survive tree-shaking. Behavior never changes.
  */
-const VERBS = ["validate", "verify", "resolve", "sync", "issue", "renew", "grant", "check", "decode", "sign"];
-const NOUNS = ["license", "pricing", "entitlement", "quota", "token", "policy", "tier", "signature", "session", "vault"];
-
 const NEVER = "globalThis.__REASHIELD_DECOY_NEVER__";
 const TRIP = "globalThis.__REASHIELD_DECOY_TRIPWIRE__";
+
+// Coherent fake features: theme -> ordered roles that form a believable flow.
+const THEMES: Record<string, string[]> = {
+  license: ["parse", "verify", "checkExpiry", "grant"],
+  billing: ["computeTax", "applyDiscount", "chargeCard", "issueInvoice"],
+  auth: ["hashToken", "rotateKey", "validateScope", "issueSession"],
+  sync: ["diffState", "mergeRemote", "resolveConflict", "pushDelta"],
+  telemetry: ["collect", "redactPII", "batch", "flush"],
+};
+const THEME_KEYS = Object.keys(THEMES);
+
+const CONSTS: Record<string, string> = {
+  license: `{"tier":"pro","graceDays":7,"algo":"ed25519"}`,
+  billing: `{"currency":"USD","taxRate":0.0825,"roundTo":2}`,
+  auth: `{"ttlSeconds":3600,"rotateEvery":86400,"alg":"HS256"}`,
+  sync: `{"strategy":"last-write-wins","batchSize":64}`,
+  telemetry: `{"sampleRate":0.1,"maxBatch":500}`,
+};
 
 export interface DecoyResult {
   code: string;
   names: string[];
-  /** fake call edges created (centrality mass added to REA's summary). */
   edges: number;
 }
 
@@ -41,60 +50,65 @@ export function injectDecoys(
   const names: string[] = [];
   const blocks: string[] = [];
   let edges = 0;
+  const hubs: string[] = [];
 
   const clusterCount = Math.max(1, Math.round(count / 4));
-  const base = Math.floor(count / clusterCount);
   let remaining = count;
-
-  const entryRefs: string[] = [];
+  const per = Math.max(1, Math.floor(count / clusterCount));
 
   for (let ci = 0; ci < clusterCount; ci++) {
-    const members = ci === clusterCount - 1 ? remaining : base;
+    const theme = poly.pick(THEME_KEYS);
+    const roles = THEMES[theme];
+    const members = ci === clusterCount - 1 ? remaining : Math.min(per, remaining);
     remaining -= members;
     if (members <= 0) continue;
 
-    const feat = `${poly.pick(VERBS)}${poly.pick(NOUNS).replace(/^./, (c) => c.toUpperCase())}`;
-    const suffix = poly.opId("feat" + ci).slice(0, 4);
-    const hub = `_${feat}Hub_${suffix}`;
-    const memberNames = Array.from(
+    const sfx = poly.opId(theme + ci).slice(0, 4);
+    const fnNames = Array.from(
       { length: members },
-      (_, i) => `_${feat}_${i}_${poly.opId("m" + ci + i).slice(0, 4)}`,
+      (_, i) => `_${theme}_${roles[i % roles.length]}_${sfx}${i}`,
     );
-    names.push(hub, ...memberNames);
+    names.push(...fnNames);
+    const cfgName = `_${theme}Cfg_${sfx}`;
 
-    // Members ring-reference the next member and the hub (high degree).
-    memberNames.forEach((m, i) => {
-      const next = memberNames[(i + 1) % memberNames.length];
-      const seed = protectedNames.length ? poly.pick(protectedNames) : feat;
-      const strs = [
-        `"route:/api/${feat.toLowerCase()}/${poly.pick(NOUNS)}"`,
-        `"ipc:${feat.toLowerCase()}:${poly.pick(VERBS)}"`,
-        `"k:${seed}:${poly.opId(m).slice(0, 8)}"`,
-      ];
-      edges += 2; // -> next, -> hub
+    // A coherent config constant the fake feature "uses".
+    blocks.push(`const ${cfgName} = ${NEVER} ? ${CONSTS[theme]} : null;`);
+
+    fnNames.forEach((fn, i) => {
+      const next = fnNames[(i + 1) % fnNames.length];
+      const role = roles[i % roles.length];
+      const route = `"route:/api/${theme}/${role}"`;
+      const ipc = `"ipc:${theme}:${role}"`;
+      const seed = protectedNames.length ? poly.pick(protectedNames) : theme;
+      edges += 2; // -> next, -> cfg
       blocks.push(
-        `function ${m}(_x){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; ` +
-          `const _s=[${strs.join(",")}]; return ${next}(_x)+${hub}()+_s.length; } return void 0; }`,
+        `function ${fn}(_x){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; ` +
+          `const _r=${route}, _c=${ipc}, _k=${JSON.stringify(seed + ":" + poly.opId(fn).slice(0, 6))}; ` +
+          `const _cfg=${cfgName}||{}; ` +
+          `return ${next}(_x) + _r.length + (_cfg.graceDays||_cfg.ttlSeconds||_cfg.batchSize||1) + _k.length; } return void 0; }`,
       );
     });
 
-    // Hub fans out to every member.
-    edges += memberNames.length;
+    const hub = `_${theme}Hub_${sfx}`;
+    hubs.push(hub);
+    names.push(hub);
+    edges += fnNames.length;
     blocks.push(
-      `function ${hub}(){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; ` +
-        `return ${memberNames.map((m) => `${m}(1)`).join("+")}; } return void 0; }`,
+      `function ${hub}(){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; return ${fnNames
+        .map((m) => `${m}(1)`)
+        .join(" + ")}; } return void 0; }`,
     );
-    entryRefs.push(`${hub}()`);
-    edges += 1; // entry -> hub
   }
 
-  // Fake feature entry references every hub (fan-in to the hubs).
   const entry = `_featureEntry_${poly.opId("entry").slice(0, 5)}`;
   names.push(entry);
+  edges += hubs.length;
   blocks.push(
-    `function ${entry}(){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; return ${entryRefs.join("+")}; } return void 0; }`,
+    `function ${entry}(){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; return ${hubs
+      .map((h) => `${h}()`)
+      .join(" + ")}; } return void 0; }`,
   );
 
-  const block = `\n/* reashield:decoys (inert; summary-tuned) */\n${blocks.join("\n")}\n`;
+  const block = `\n/* reashield:decoys (inert; coherent fake features) */\n${blocks.join("\n")}\n`;
   return { code: code + block, names, edges };
 }

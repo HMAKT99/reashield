@@ -13,7 +13,7 @@ def pub():
 
 def test_string_indirection_and_name_mangling():
     cfg = {"preset": "balanced", "seed": "s",
-           "layers": {"decoys_enabled": False},
+           "layers": {"decoys_enabled": False, "dynamic_graph": False},
            "protect": [{"name": "_internal", "mode": "obfuscate"}]}
     orig, cli, art = load(SRC, cfg)
     assert cli.pub() == orig.pub() == "INTERNAL-SECRET-STR"

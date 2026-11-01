@@ -13,6 +13,7 @@ from .layers.relocate import relocate
 from .layers.seal import seal
 from .layers.strip import strip_docstrings
 from .layers.obfuscate import string_indirection, name_mangling, OBF_HEADER
+from .layers.dynamic import computed_dispatch
 from .layers.decoys import decoy_source
 
 
@@ -27,6 +28,7 @@ class State:
     relocated: list = field(default_factory=list)
     sealed: list = field(default_factory=list)
     mangled: list = field(default_factory=list)
+    dispatched: list = field(default_factory=list)
     decoy_names: list = field(default_factory=list)
     removed_strings: list = field(default_factory=list)
     notes: list = field(default_factory=list)
@@ -53,6 +55,8 @@ def harden(source: str, config: ShieldConfig) -> Artifacts:
     if config.layers.strip:
         strip_docstrings(mod.tree, state)
     needs_obf = False
+    if config.layers.dynamic_graph:
+        computed_dispatch(mod.tree, state)
     if config.layers.string_indirection:
         needs_obf = string_indirection(mod.tree, state)
     if config.layers.name_mangling:

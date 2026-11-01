@@ -173,3 +173,59 @@ export async function tryRea(
     };
   }
 }
+
+/**
+ * WS6 — ecosystem coverage. Run webcrack (unpacks/deobfuscates bundled JS) on
+ * the hardened client and report whether it recovers any protected tokens.
+ * Report-only, best-effort, gracefully skipped if unavailable. (humanify, the
+ * LLM un-minifier, needs an API key, so it is documented rather than run.)
+ */
+export interface EcosystemResult {
+  available: boolean;
+  tool: string;
+  recovered: number;
+  recoveredTokens: string[];
+  note: string;
+}
+
+export async function tryWebcrack(
+  clientFile: string,
+  tokens: string[],
+): Promise<EcosystemResult> {
+  const uniq = [...new Set(tokens.filter((t) => t && t.length >= 3))];
+  const { mkdtempSync, readdirSync, readFileSync } = await import("node:fs");
+  const osmod = await import("node:os");
+  const pathmod = await import("node:path");
+  const out = mkdtempSync(pathmod.join(osmod.tmpdir(), "reashield-webcrack-"));
+  try {
+    await pexec("npx", ["-y", "webcrack", clientFile, "-o", out], {
+      timeout: 180_000,
+      maxBuffer: 128 * 1024 * 1024,
+    });
+    let text = "";
+    const walk = (d: string) => {
+      for (const n of readdirSync(d, { withFileTypes: true })) {
+        const p = pathmod.join(d, n.name);
+        if (n.isDirectory()) walk(p);
+        else if (n.name.endsWith(".js")) text += readFileSync(p, "utf8");
+      }
+    };
+    walk(out);
+    const recoveredTokens = uniq.filter((t) => text.includes(t));
+    return {
+      available: true,
+      tool: "webcrack",
+      recovered: recoveredTokens.length,
+      recoveredTokens,
+      note: "webcrack deobfuscated/unpacked the client",
+    };
+  } catch (e) {
+    return {
+      available: false,
+      tool: "webcrack",
+      recovered: 0,
+      recoveredTokens: [],
+      note: "webcrack not run: " + String((e as Error).message).split("\n")[0],
+    };
+  }
+}

@@ -16,6 +16,13 @@ defeats most *automated* attempts. It does not make code impossible to reverse.
   example). PASS now requires 0 recovered.
 - **`reashield tune`**: auto-tunes the config across a grid to minimize measured
   recovery under a size budget.
+- **Coherent misleading decoys**: inert fake *features* (self-consistent
+  parse->verify->grant chains with plausible config/route/IPC) that lead an LLM
+  to confidently explain a feature that does not exist.
+- **Ecosystem coverage**: `test --rea` now also runs **webcrack** on the hardened
+  client and reports recovered tokens (humanify documented; needs an LLM key).
+- **Python parity**: computed-dispatch layer (mirrors JS `dynamicGraph`),
+  default-on at `balanced`.
 
 ### Changed
 - `dynamicGraph` (computed dispatch) is now **default-on at `balanced`** — forces

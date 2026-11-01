@@ -18,6 +18,7 @@ class ProtectEntry:
 class Layers:
     string_indirection: bool = True
     name_mangling: bool = True
+    dynamic_graph: bool = True
     decoys_enabled: bool = True
     decoy_count: int = 5
     strip: bool = True
@@ -36,10 +37,10 @@ class ShieldConfig:
 
 def _layers_for_preset(preset: str) -> Layers:
     if preset == "low":
-        return Layers(string_indirection=False, name_mangling=True,
+        return Layers(string_indirection=False, name_mangling=True, dynamic_graph=False,
                       decoys_enabled=True, decoy_count=2, strip=True, bytecode=False)
     if preset == "max":
-        return Layers(string_indirection=True, name_mangling=True,
+        return Layers(string_indirection=True, name_mangling=True, dynamic_graph=True,
                       decoys_enabled=True, decoy_count=15, strip=True, bytecode=True)
     return Layers()  # balanced defaults
 

@@ -14,7 +14,7 @@ import path from "node:path";
 import { resolveConfig } from "./config.js";
 import { runPipeline } from "./pipeline.js";
 import { formatApplied, formatMetrics } from "./report.js";
-import { compareStatic, tryRea } from "./harness/rea-measure.js";
+import { compareStatic, tryRea, tryWebcrack } from "./harness/rea-measure.js";
 import { runRegression } from "./harness/regression.js";
 import { tune } from "./harness/tune.js";
 import { rewriteIpcChannels } from "./electron/ipc.js";
@@ -228,6 +228,17 @@ program
         );
       } else {
         console.log(`  ${rea.note}`);
+      }
+
+      // Ecosystem coverage (report-only): webcrack.
+      const wc = await tryWebcrack(clientPath, tokens);
+      if (wc.available) {
+        console.log(
+          `  webcrack recovers: ${wc.recovered} protected token(s)` +
+            (wc.recoveredTokens.length ? ` (${wc.recoveredTokens.join(", ")})` : " \u2014 none"),
+        );
+      } else {
+        console.log(`  ${wc.note}`);
       }
     }
 

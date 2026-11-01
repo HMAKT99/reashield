@@ -32,8 +32,9 @@ def test_secrets_left_the_client():
     assert art.state.sealed == ["sealed_score"]
 
 
-def test_feature_gate_name_mangled():
+def test_feature_gate_hidden():
     _, _, art = load(SRC, CFG)
-    assert "feature_gate" in art.state.mangled
+    # internal obfuscate-mode fn is either dispatched (computed) or mangled
+    assert "feature_gate" in (art.state.dispatched + art.state.mangled)
     assert "def feature_gate(" not in art.client   # the definition was renamed
     assert "def activate(" in art.client           # public API preserved

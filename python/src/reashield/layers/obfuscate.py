@@ -68,7 +68,7 @@ def name_mangling(tree: ast.Module, state) -> None:
         if entry.mode != "obfuscate":
             continue
         name = entry.name
-        if name not in state.mod.fns:
+        if name not in state.mod.fns or name in state.dispatched:
             continue
         is_public = (exported is not None and name in exported) or (
             exported is None and not name.startswith("_")
