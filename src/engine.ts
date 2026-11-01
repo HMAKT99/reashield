@@ -7,9 +7,9 @@ import {
   dynamicGraph,
   dynamicChannels,
   homogenizeProtected,
+  wasmCompile,
   type TransformState,
 } from "./layers/source-transforms.js";
-import { noteWasmFallback } from "./layers/wasm.js";
 import { injectDecoys } from "./layers/decoys.js";
 import { obfuscate } from "./layers/obfuscate.js";
 import { stripSourceMapComments } from "./layers/strip-sourcemaps.js";
@@ -48,6 +48,7 @@ export function newState(
     dispatched: [],
     channelsRewritten: 0,
     ipcRewritten: 0,
+    wasmCompiled: [],
     removedStrings: [],
     renamed: [],
     warnings: [],
@@ -60,7 +61,7 @@ export function runSourceTransforms(source: string, state: TransformState): stri
   const { ast, fns } = parseSource(source);
   relocate(ast, fns, state);
   seal(ast, fns, state);
-  noteWasmFallback(state);
+  wasmCompile(ast, fns, state);
   if (state.config.layers.dynamicGraph) dynamicGraph(ast, fns, state);
   if (state.config.layers.dynamicChannels) dynamicChannels(ast, state);
   homogenizeProtected(ast, state);
@@ -87,7 +88,8 @@ export function transformModuleSource(
     state.dispatched.length +
     state.renamed.length +
     state.channelsRewritten +
-    state.ipcRewritten;
+    state.ipcRewritten +
+    state.wasmCompiled.length;
   const code = runSourceTransforms(source, state);
   const after =
     state.relocated.length +
@@ -95,7 +97,8 @@ export function transformModuleSource(
     state.dispatched.length +
     state.renamed.length +
     state.channelsRewritten +
-    state.ipcRewritten;
+    state.ipcRewritten +
+    state.wasmCompiled.length;
   return after > before ? code : null;
 }
 

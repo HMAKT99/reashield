@@ -125,6 +125,7 @@ export interface BuildArtifacts {
   /** Names of symbols whose real body left the client entirely. */
   relocated: string[];
   sealed: string[];
+  wasmCompiled: string[];
   decoyNames: string[];
   /** Distinctive secret strings that left the client (relocated/sealed bodies). */
   removedStrings: string[];

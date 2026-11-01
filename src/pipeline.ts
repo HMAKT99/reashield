@@ -53,6 +53,16 @@ export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
       : "no seal-mode symbols",
     cost: "connectivity",
   });
+  const wasmEntries = config.protect.filter((p) => p.mode === "wasm");
+  if (wasmEntries.length)
+    applied.push({
+      layer: "wasm",
+      applied: state.wasmCompiled.length > 0,
+      detail: state.wasmCompiled.length
+        ? `compiled to WebAssembly: ${state.wasmCompiled.join(", ")}`
+        : "no wasm-mode symbol in numeric subset (fell back to obfuscate)",
+      cost: "cpu",
+    });
   if (config.layers.dynamicGraph)
     applied.push({
       layer: "dynamicGraph",
@@ -129,6 +139,7 @@ export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
     opMap: state.opMap,
     relocated: state.relocated,
     sealed: state.sealed,
+    wasmCompiled: state.wasmCompiled,
     decoyNames: fin.decoyNames,
     removedStrings: state.removedStrings,
   };

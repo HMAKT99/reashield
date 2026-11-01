@@ -5,6 +5,7 @@ import type { Binding } from "@babel/traverse";
 import { traverse, type ExtractedFn } from "../analyze/extract.js";
 import type { Polymorph, ShieldConfig } from "../types.js";
 import { argListSource, computedKeyExpr, stubBody } from "./ast-helpers.js";
+import { compileNumericToWasm, UnsupportedWasm } from "./wasm-compile.js";
 
 export interface TransformState {
   config: ShieldConfig;
@@ -17,6 +18,7 @@ export interface TransformState {
   dispatched: string[];
   channelsRewritten: number;
   ipcRewritten: number;
+  wasmCompiled: string[];
   removedStrings: string[];
   renamed: string[];
   warnings: string[];
@@ -148,6 +150,58 @@ export function seal(
     if (withFunctionNode(ast, entry.name, (n) => setAsyncAndBody(n, body)))
       state.sealed.push(entry.name);
   }
+}
+
+
+function setBodySync(node: t.Function, body: t.BlockStatement): void {
+  if (node.type === "ArrowFunctionExpression") {
+    node.body = body;
+    node.expression = false;
+  } else {
+    (node as t.FunctionDeclaration | t.FunctionExpression).body = body;
+  }
+}
+
+/** Pillar 3: compile numeric-subset wasm-mode functions to a real WASM module;
+ *  otherwise fall back to obfuscation (reported, never silent). Stays sync. */
+export function wasmCompile(
+  ast: t.File,
+  fns: Map<string, ExtractedFn>,
+  state: TransformState,
+): void {
+  const loaders: string[] = [];
+  for (const entry of state.config.protect) {
+    if (entry.mode !== "wasm") continue;
+    const fn = fns.get(entry.name);
+    if (!fn) {
+      state.warnings.push(`wasm: "${entry.name}" not found in input`);
+      continue;
+    }
+    let bytes: Uint8Array;
+    try {
+      bytes = compileNumericToWasm(fn.params, fn.bodySource);
+    } catch (e) {
+      const why = e instanceof UnsupportedWasm ? e.message : String(e);
+      state.warnings.push(
+        `wasm: "${entry.name}" outside the numeric subset (${why}); ` +
+          `falling back to obfuscate (stays on REA's JS path).`,
+      );
+      continue;
+    }
+    const id = state.poly.opId("wasm::" + entry.name);
+    const b64 = Buffer.from(bytes).toString("base64");
+    const wi = "__wi_" + id;
+    const wc = "__wc_" + id;
+    loaders.push(
+      `let ${wi}; function ${wc}(_args){ if(!${wi}){ const _b=Uint8Array.from(atob(${JSON.stringify(b64)}),c=>c.charCodeAt(0)); ${wi}=new WebAssembly.Instance(new WebAssembly.Module(_b)).exports.f; } return ${wi}.apply(null,_args); }`,
+    );
+    const args = argListSource(fn.params);
+    const body = stubBody(`function __t(${fn.params.join(", ")}){ return ${wc}([${args}]); }`);
+    if (withFunctionNode(ast, entry.name, (n) => setBodySync(n, body)))
+      state.wasmCompiled.push(entry.name);
+  }
+  if (loaders.length)
+    ast.program.body.push(...parseStatements(loaders.join("\n")));
 }
 
 /** Pillar 4 (max/opt-in): route INTERNAL protected calls through a computed table. */

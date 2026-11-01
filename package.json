@@ -38,7 +38,7 @@
     "demo": "cd examples/sample-package && node ../../dist/cli.js test",
     "example:test": "node --test examples/sample-package/test/sample.test.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test test/unit.test.mjs && node --test examples/sample-package/test/sample.test.mjs && node --test examples/sample-package/test/rollup-plugin.test.mjs && node --test test/electron.test.mjs",
+    "test": "npm run build && node --test test/unit.test.mjs && node --test examples/sample-package/test/sample.test.mjs && node --test examples/sample-package/test/rollup-plugin.test.mjs && node --test test/electron.test.mjs && node --test test/wasm.test.mjs",
     "e2e:http": "npm run build && node examples/sample-package/e2e-http.mjs",
     "prepublishOnly": "npm run build"
   },

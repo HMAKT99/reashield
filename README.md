@@ -42,7 +42,7 @@ the foundation.
 |---|---|---|---|
 | **Server-side relocation** | `relocate` | Moves the real body to a generated server skeleton; ships only an opaque remote-call stub through one endpoint. The secret never ships. | Needs a secured backend; the request/response boundary is observable. |
 | **Encrypted sealing** (`max`) | `seal` | Ships the module as ciphertext, decrypted at runtime with a key fetched from your server. | Needs connectivity; does **not** stop a human dumping decrypted memory. |
-| **WASM** (fast-follow) | `wasm` | Moves logic off REA's JS graph path. | Compile backend not yet shipped; falls back to `obfuscate` (reported). |
+| **WASM** | `wasm` | Compiles numeric-subset logic to a real WebAssembly module, off REA's JS graph path. | Numeric subset only; falls back to `obfuscate` (reported) outside it; wasm can still be decompiled. |
 | **Dynamic graph** (`max`) | `dynamicGraph` | Computed imports + runtime dispatch table — deletes the call/import edges REA recovers. | CPU cost; scoped to protected regions. |
 | **Graph starvation** | `flattenBundle`, `stripSourceMaps`, `stringIndirection`, `dynamicChannels` | One module, no maps, no semantic plaintext strings, computed channel names. | Obfuscation erodes over time. |
 | **Polymorphism** | `polymorphic` | Per-build re-randomization of names, strings **and structure** — defeats version diffing. | Cosmetic alone; pairs with the above. |
@@ -198,6 +198,17 @@ pillars above):
 you use these commands. Programmatic API: `import { rewriteIpcChannels,
 compileToBytecode, recommendedFuses, applyFuses } from "reashield/electron"`.
 
+## WASM backend (numeric crown jewels)
+
+Mark a function `mode: "wasm"` and REAShield compiles it to a **real WebAssembly
+module** (emitted as binary — no external toolchain) that is instantiated
+synchronously, so behavior is unchanged. The arithmetic then lives in wasm
+bytes, off REA's JS module-graph path. Supported today: numeric params, `const`
+locals, a `return`, `+ - * /`, unary `-`, ternaries with comparison/`&&`/`||`/`!`
+conditions, and `Math.(max|min|abs|floor|ceil|round|sqrt|trunc)`. Anything
+outside that subset falls back to in-place obfuscation, reported (never silent).
+Honest limit: wasm is a harder, different analysis league — not unbreakable.
+
 ## Durability: measure, don't trust
 
 REA ships often. `reashield test` compares your own before/after artifact and
@@ -214,10 +225,10 @@ protected-name leakage, secret-string removal).
 ## Roadmap
 
 ✅ Bundler plugins (esbuild/Rollup/Vite) · ✅ Electron path (bytenode, defensive
-fuses, dynamic IPC rewriting).
+fuses, dynamic IPC rewriting) · ✅ WASM backend (numeric-subset → real wasm).
 
-Next: WASM compile backend · broader server adapters + auth helpers ·
-summary-view-tuned decoys · ASAR packaging integration helpers.
+Next: broader WASM subset (control flow, strings) · broader server adapters +
+auth helpers · summary-view-tuned decoys · ASAR packaging integration helpers.
 
 ## License
 
