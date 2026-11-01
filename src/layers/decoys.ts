@@ -1,32 +1,33 @@
 import type { Polymorph } from "../types.js";
 
 /**
- * Graph-flooding decoys. Inert, plausible fake modules/handlers/strings injected
- * AFTER bundling (so they survive tree-shaking). Each is guarded by a sentinel
- * that is never set, so it never runs, and bumps a tripwire counter if it ever
- * did — the test asserts the counter stays 0. Shaped to cross-reference each
- * other so they look central in REA's summary.
+ * Summary-view-tuned graph-flooding decoys.
  *
- * Experimental: measured against REA, can backfire (size). Never changes behavior.
+ * REA builds a graph then hands the agent a COMPACT SUMMARY to reason over. So
+ * decoys are shaped to look *central* in that summary: grouped into fake
+ * "feature" clusters with a hub that fans out to members, members that ring-
+ * reference each other and the hub (high in/out degree), a fake entry that
+ * references each hub, and plausible route/IPC/key strings — the exact signals
+ * REA's feature-investigation workflows latch onto.
+ *
+ * Every decoy is inert: guarded by a sentinel that is never set, so it never
+ * runs; each bumps a tripwire counter *only if executed* — the tests assert the
+ * counter stays 0. Injected AFTER bundling so they survive tree-shaking.
+ *
+ * Experimental: measure against REA, it can backfire (bundle size). Never
+ * changes behavior.
  */
-const DECOY_WORDS = [
-  "license",
-  "pricing",
-  "entitlement",
-  "quota",
-  "verify",
-  "signature",
-  "token",
-  "policy",
-  "tier",
-  "grant",
-  "nonce",
-  "vault",
-];
+const VERBS = ["validate", "verify", "resolve", "sync", "issue", "renew", "grant", "check", "decode", "sign"];
+const NOUNS = ["license", "pricing", "entitlement", "quota", "token", "policy", "tier", "signature", "session", "vault"];
+
+const NEVER = "globalThis.__REASHIELD_DECOY_NEVER__";
+const TRIP = "globalThis.__REASHIELD_DECOY_TRIPWIRE__";
 
 export interface DecoyResult {
   code: string;
   names: string[];
+  /** fake call edges created (centrality mass added to REA's summary). */
+  edges: number;
 }
 
 export function injectDecoys(
@@ -35,34 +36,65 @@ export function injectDecoys(
   poly: Polymorph,
   protectedNames: string[],
 ): DecoyResult {
-  if (count <= 0) return { code, names: [] };
-  const names: string[] = [];
-  const bodies: string[] = [];
+  if (count <= 0) return { code, names: [], edges: 0 };
 
-  for (let i = 0; i < count; i++) {
-    const w1 = poly.pick(DECOY_WORDS);
-    const w2 = poly.pick(DECOY_WORDS);
-    const seed = protectedNames.length
-      ? poly.pick(protectedNames)
-      : poly.ident();
-    const fn = `_${w1}${w2[0].toUpperCase()}${w2.slice(1)}_${poly
-      .opId(w1 + w2 + i)
-      .slice(0, 4)}`;
-    names.push(fn);
-    const str = `${w1}:${seed}:${poly.opId(String(i)).slice(0, 6)}`;
-    bodies.push(
-      `function ${fn}(_x){ if(globalThis.__REASHIELD_DECOY_NEVER__){` +
-        `globalThis.__REASHIELD_DECOY_TRIPWIRE__=(globalThis.__REASHIELD_DECOY_TRIPWIRE__|0)+1;` +
-        `const _s=${JSON.stringify(str)}; return _s.length + (_x||0);} return void 0; }`,
+  const names: string[] = [];
+  const blocks: string[] = [];
+  let edges = 0;
+
+  const clusterCount = Math.max(1, Math.round(count / 4));
+  const base = Math.floor(count / clusterCount);
+  let remaining = count;
+
+  const entryRefs: string[] = [];
+
+  for (let ci = 0; ci < clusterCount; ci++) {
+    const members = ci === clusterCount - 1 ? remaining : base;
+    remaining -= members;
+    if (members <= 0) continue;
+
+    const feat = `${poly.pick(VERBS)}${poly.pick(NOUNS).replace(/^./, (c) => c.toUpperCase())}`;
+    const suffix = poly.opId("feat" + ci).slice(0, 4);
+    const hub = `_${feat}Hub_${suffix}`;
+    const memberNames = Array.from(
+      { length: members },
+      (_, i) => `_${feat}_${i}_${poly.opId("m" + ci + i).slice(0, 4)}`,
     );
+    names.push(hub, ...memberNames);
+
+    // Members ring-reference the next member and the hub (high degree).
+    memberNames.forEach((m, i) => {
+      const next = memberNames[(i + 1) % memberNames.length];
+      const seed = protectedNames.length ? poly.pick(protectedNames) : feat;
+      const strs = [
+        `"route:/api/${feat.toLowerCase()}/${poly.pick(NOUNS)}"`,
+        `"ipc:${feat.toLowerCase()}:${poly.pick(VERBS)}"`,
+        `"k:${seed}:${poly.opId(m).slice(0, 8)}"`,
+      ];
+      edges += 2; // -> next, -> hub
+      blocks.push(
+        `function ${m}(_x){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; ` +
+          `const _s=[${strs.join(",")}]; return ${next}(_x)+${hub}()+_s.length; } return void 0; }`,
+      );
+    });
+
+    // Hub fans out to every member.
+    edges += memberNames.length;
+    blocks.push(
+      `function ${hub}(){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; ` +
+        `return ${memberNames.map((m) => `${m}(1)`).join("+")}; } return void 0; }`,
+    );
+    entryRefs.push(`${hub}()`);
+    edges += 1; // entry -> hub
   }
 
-  // Dead dispatcher that cross-references every decoy (fan-in/out), never runs.
-  const refs = names.map((n) => `${n}(1)`).join(" + ");
-  const dispatcher = `function _dispatch_${poly
-    .opId("disp")
-    .slice(0, 5)}(){ if(globalThis.__REASHIELD_DECOY_NEVER__){ return ${refs}; } }`;
+  // Fake feature entry references every hub (fan-in to the hubs).
+  const entry = `_featureEntry_${poly.opId("entry").slice(0, 5)}`;
+  names.push(entry);
+  blocks.push(
+    `function ${entry}(){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; return ${entryRefs.join("+")}; } return void 0; }`,
+  );
 
-  const block = `\n/* reashield:decoys */\n${bodies.join("\n")}\n${dispatcher}\n`;
-  return { code: code + block, names };
+  const block = `\n/* reashield:decoys (inert; summary-tuned) */\n${blocks.join("\n")}\n`;
+  return { code: code + block, names, edges };
 }

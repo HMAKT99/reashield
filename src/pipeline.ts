@@ -107,7 +107,7 @@ export async function runPipeline(opts: RunOptions): Promise<BuildArtifacts> {
     applied.push({
       layer: "decoys",
       applied: true,
-      detail: `${fin.decoyNames.length} inert decoy(s) injected`,
+      detail: `${fin.decoyNames.length} inert decoy(s) + ${fin.decoyEdges} fake edge(s) injected`,
       cost: "size",
     });
   if (config.layers.obfuscate)

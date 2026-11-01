@@ -46,7 +46,7 @@ the foundation.
 | **Dynamic graph** (`max`) | `dynamicGraph` | Computed imports + runtime dispatch table — deletes the call/import edges REA recovers. | CPU cost; scoped to protected regions. |
 | **Graph starvation** | `flattenBundle`, `stripSourceMaps`, `stringIndirection`, `dynamicChannels` | One module, no maps, no semantic plaintext strings, computed channel names. | Obfuscation erodes over time. |
 | **Polymorphism** | `polymorphic` | Per-build re-randomization of names, strings **and structure** — defeats version diffing. | Cosmetic alone; pairs with the above. |
-| **Decoys** | `decoys` | Inert, plausible fake modules/strings that pollute REA's summary. | Experimental; measured, can add size. |
+| **Decoys** | `decoys` | Inert fake "feature" clusters (hub + ring-linked members + a fake entry) with plausible route/IPC/key strings, shaped to look central in REA's summary. | Experimental; measured, can add size. |
 | **Integrity** | `integrity` (off) | Fail-safe anti-tamper. | Does **not** defend REA's static path (REA never runs your app). |
 
 ## Install

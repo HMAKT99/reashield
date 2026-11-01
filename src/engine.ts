@@ -113,7 +113,7 @@ export function finalizeCode(
   code: string,
   state: TransformState,
   opts: FinalizeOptions = {},
-): { code: string; decoyNames: string[] } {
+): { code: string; decoyNames: string[]; decoyEdges: number } {
   const { config, poly } = state;
 
   if (
@@ -131,6 +131,7 @@ export function finalizeCode(
   }
 
   let decoyNames: string[] = [];
+  let decoyEdges = 0;
   if (config.layers.decoys.enabled && config.layers.decoys.count > 0) {
     const r = injectDecoys(
       code,
@@ -140,13 +141,14 @@ export function finalizeCode(
     );
     code = r.code;
     decoyNames = r.names;
+    decoyEdges = r.edges;
   }
   if (config.layers.obfuscate) {
     code = obfuscate(code, config.preset, poly.seed, config.layers.stringIndirection);
   }
   if (config.layers.stripSourceMaps) code = stripSourceMapComments(code);
   if (config.layers.integrity) code = wrapIntegrity(code);
-  return { code, decoyNames };
+  return { code, decoyNames, decoyEdges };
 }
 
 /** Build the server skeleton files (empty if nothing relocated/sealed). */

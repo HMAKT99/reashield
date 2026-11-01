@@ -69,3 +69,36 @@ test("compareStatic: string leakage drops after obfuscation", async () => {
   assert.ok(!art.clientCode.includes("VERY_SECRET_MARKER_STRING"), "marker encoded away");
   assert.ok(cmp.stringLeakRatio < 1, "string leak ratio below 1");
 });
+
+test("decoys: summary-tuned clusters are injected, inert, and add fake edges", async () => {
+  const { mkdtempSync, writeFileSync, mkdirSync, rmSync } = await import("node:fs");
+  const os = await import("node:os");
+  const dir = mkdtempSync(path.join(os.tmpdir(), "reashield-dec-"));
+  try {
+    mkdirSync(path.join(dir, "src"), { recursive: true });
+    writeFileSync(path.join(dir, "src", "index.js"), "export const ping = () => 1;\n");
+    const cfg = normalizeConfig({
+      input: "src/index.js",
+      preset: "low",
+      layers: { obfuscate: false, decoys: { enabled: true, count: 8 } },
+    });
+    const art = await runPipeline({ config: cfg, cwd: dir, seed: "dec" });
+
+    // Centrality signals present for REA's summary to latch onto.
+    assert.ok(art.clientCode.includes("__REASHIELD_DECOY_NEVER__"), "inert guard present");
+    assert.ok(/route:\/api\//.test(art.clientCode), "decoy route strings present");
+    assert.ok(/ipc:/.test(art.clientCode), "decoy ipc strings present");
+    assert.ok(/_featureEntry_/.test(art.clientCode), "fake feature entry (fan-in) present");
+    assert.ok(art.decoyNames.length >= 8, "at least `count` decoy functions");
+
+    // Inert: evaluating the module must never run a decoy.
+    const clientPath = path.join(dir, "client.js");
+    writeFileSync(clientPath, art.clientCode);
+    globalThis.__REASHIELD_DECOY_TRIPWIRE__ = 0;
+    const m = await import(pathToFileURL(clientPath).href);
+    assert.equal(m.ping(), 1, "real export still works");
+    assert.equal(globalThis.__REASHIELD_DECOY_TRIPWIRE__ | 0, 0, "no decoy ran");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
