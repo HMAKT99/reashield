@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/reashield.svg)](https://www.npmjs.com/package/reashield)
 [![license](https://img.shields.io/npm/l/reashield.svg)](./LICENSE)
 [![CI](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml/badge.svg)](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml)
+[![python-ci](https://github.com/HMAKT99/reashield/actions/workflows/python-ci.yml/badge.svg)](https://github.com/HMAKT99/reashield/actions/workflows/python-ci.yml)
 
 **Drop-in defensive hardening that starves automated, agent-driven reverse
 engineering of your _own_ shipped JavaScript / npm artifact.**
@@ -24,6 +25,27 @@ REAShield is **defensive-only, behavior-preserving, and transparent** (no hidden
 network calls, no phone-home). It hardens code _you own and ship_. It is not a
 tool for analyzing, hiding, or tampering with anyone else's software, and it
 will not help bypass someone else's DRM, license checks, or anti-cheat.
+
+---
+
+## Two front-ends, one architecture
+
+REAShield is a monorepo. The same durable idea — **move secrets off-device, turn
+static facts into runtime facts, and measure the result** — is implemented for
+two ecosystems:
+
+| Front-end | Install | Protects | Status |
+|---|---|---|---|
+| **JavaScript / npm / Electron** (this package) | `npm i -D reashield` | shipped JS bundles, `app.asar` | published |
+| **Python** ([`python/`](./python)) | `pip install -e python` | shipped `.py` apps | in this repo |
+
+Both share the pillar ordering below. The Python package mirrors relocation,
+sealing (AES-GCM), string indirection, name mangling, polymorphism, decoys, and
+a measurement harness — with a safety analyzer that **refuses rather than
+miscompiles**. See [`python/README.md`](./python/README.md).
+
+Interpreted / source-shipped languages are the natural fit; compiled-to-native
+(Go, Rust, C/C++) ship no source and are a different reverse-engineering game.
 
 ---
 

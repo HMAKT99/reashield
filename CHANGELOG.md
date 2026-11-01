@@ -9,6 +9,18 @@ defeats most *automated* attempts. It does not make code impossible to reverse.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-01
+
+### Added
+- **Python front-end** ([`python/`](./python)) — a full-parity, pip-installable
+  shield for shipped Python code: server-side relocation, AES-GCM sealing, string
+  indirection, name mangling, polymorphism, inert decoys, and a measurement
+  harness, with a safety analyzer that refuses rather than miscompiles. Separate
+  `python-ci` across Python 3.11/3.12/3.13.
+
+### Changed
+- README now presents the repo as a monorepo (JS + Python front-ends).
+
 ## [0.6.0] - 2026-11-01
 
 Capstone release — the full planned roadmap, shipped and tested.
@@ -89,7 +101,8 @@ Capstone release — the full planned roadmap, shipped and tested.
 - Measurement harness (`rea-agents` when installed, static proxy otherwise) and a
   regression gate pinned across `rea-agents` versions, with a CI workflow.
 
-[Unreleased]: https://github.com/HMAKT99/reashield/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/HMAKT99/reashield/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/HMAKT99/reashield/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/HMAKT99/reashield/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/HMAKT99/reashield/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/HMAKT99/reashield/compare/v0.3.0...v0.4.0
