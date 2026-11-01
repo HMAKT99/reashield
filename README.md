@@ -1,5 +1,9 @@
 # REAShield
 
+[![npm version](https://img.shields.io/npm/v/reashield.svg)](https://www.npmjs.com/package/reashield)
+[![license](https://img.shields.io/npm/l/reashield.svg)](./LICENSE)
+[![CI](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml/badge.svg)](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml)
+
 **Drop-in defensive hardening that starves automated, agent-driven reverse
 engineering of your _own_ shipped JavaScript / npm artifact.**
 
