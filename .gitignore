@@ -12,3 +12,4 @@ examples/**/dist-*/
 examples/**/server-*/
 examples/**/*-server/
 .bc-tmp-*/
+*.tgz
