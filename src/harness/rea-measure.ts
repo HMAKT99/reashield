@@ -196,9 +196,20 @@ export async function tryWebcrack(
   const { mkdtempSync, readdirSync, readFileSync } = await import("node:fs");
   const osmod = await import("node:os");
   const pathmod = await import("node:path");
+  // Only run if webcrack is installed locally; cold `npx` downloads are slow/flaky.
+  const { createRequire } = await import("node:module");
+  const req = createRequire(import.meta.url);
+  try {
+    req.resolve("webcrack");
+  } catch {
+    return {
+      available: false, tool: "webcrack", recovered: 0, recoveredTokens: [],
+      note: "webcrack not installed (npm i -D webcrack to include it in --rea)",
+    };
+  }
   const out = mkdtempSync(pathmod.join(osmod.tmpdir(), "reashield-webcrack-"));
   try {
-    await pexec("npx", ["-y", "webcrack", clientFile, "-o", out], {
+    await pexec("npx", ["webcrack", clientFile, "-o", out, "-f"], {
       timeout: 180_000,
       maxBuffer: 128 * 1024 * 1024,
     });

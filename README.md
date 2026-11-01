@@ -22,7 +22,10 @@ engineering of your _own_ shipped JavaScript / npm artifact.**
 > extracted given effort — obfuscation, WASM and bytecode only raise the cost.
 > What REAShield delivers is **measured against the real attacker**: on the
 > example, REA (`rea-agents`) recovered **6 protected tokens** (the secret +
-> protected names) on a plain build and **0** after hardening (`test --rea`). That's the goal — automated
+> protected names) on a plain build and **0** after hardening (`test --rea`).
+> Independently, **webcrack** fully deobfuscated the hardened client (1103
+> changes, string array decoded) and still recovered **0 protected tokens** —
+> because they were relocated/sealed, not merely obfuscated. That's the goal — automated
 > recovery driven to ~zero — not an impossible absolute.
 >
 > The single biggest lever isn't a trick in this tool: **the only truly
