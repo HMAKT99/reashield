@@ -13,6 +13,11 @@ your *own* shipped Python code.** The Python front-end of
 >
 > "Foolproof" here means **engineering robustness** — it never silently breaks
 > your code: unsupported cases are **refused with a reason**, not miscompiled.
+>
+> **On "unbreakable":** offline code can never be made unbreakable — if the
+> machine executes it, the machine has it. The only truly unrecoverable option is
+> to not ship the logic (run it server-side; `mode: "relocate"`). For offline
+> apps, REAShield maximizes attacker cost instead.
 
 ## Install
 

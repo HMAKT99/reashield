@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { createRequire } from "node:module";
+import os from "node:os";
+import { build as esbuildBuild } from "esbuild";
 import {
   writeFileSync,
   mkdirSync,
@@ -14,6 +16,7 @@ import { runPipeline } from "./pipeline.js";
 import { formatApplied, formatMetrics } from "./report.js";
 import { compareStatic, tryRea } from "./harness/rea-measure.js";
 import { runRegression } from "./harness/regression.js";
+import { tune } from "./harness/tune.js";
 import { rewriteIpcChannels } from "./electron/ipc.js";
 import { compileToBytecode } from "./electron/bytecode.js";
 import { recommendedFuses, applyFuses } from "./electron/fuses.js";
@@ -193,15 +196,35 @@ program
     });
     console.log(`\n  regression: ${reg.status} — ${reg.details.join("; ")}`);
 
+    let reaRecoveredAfter = 0;
     if (opts.rea) {
-      console.log("\n  attempting real rea-agents measurement…");
-      const rea = await tryRea(path.dirname(inputPath), path.dirname(clientPath));
-      if (rea.available) {
+      console.log("\n  running real rea-agents (this can take a few minutes)…");
+      const tokens = [...protectedNames, ...artifacts.removedStrings];
+      // REA wants a shipped-artifact shape, so compare a clean bundle (before)
+      // vs the hardened client dir (after) — not the raw multi-file source.
+      const beforeDir = path.join(os.tmpdir(), "reashield-before-" + Date.now());
+      mkdirSync(beforeDir, { recursive: true });
+      await esbuildBuild({
+        entryPoints: [inputPath],
+        bundle: true,
+        platform: "node",
+        format: "esm",
+        outfile: path.join(beforeDir, "index.js"),
+        logLevel: "silent",
+      });
+      const rea = await tryRea(beforeDir, path.dirname(clientPath), tokens);
+      if (rea.available && rea.before && rea.after) {
         console.log(
           formatMetrics([
-            { label: "REA modules", before: rea.before?.modules ?? "?", after: rea.after?.modules ?? "?" },
-            { label: "REA imports", before: rea.before?.imports ?? "?", after: rea.after?.imports ?? "?" },
+            { label: "REA graph nodes", before: rea.before.nodes, after: rea.after.nodes },
+            { label: "REA graph edges", before: rea.before.edges, after: rea.after.edges },
+            { label: "protected tokens REA recovers", before: rea.before.recovered, after: rea.after.recovered },
           ]),
+        );
+        reaRecoveredAfter = rea.after.recovered;
+        console.log(
+          `\n  REA recovery score (protected tokens): ${rea.before.recovered} -> ${rea.after.recovered}` +
+            (rea.after.recoveredTokens.length ? ` (still visible: ${rea.after.recoveredTokens.join(", ")})` : ""),
         );
       } else {
         console.log(`  ${rea.note}`);
@@ -211,6 +234,7 @@ program
     const ok =
       !cmp.after.hasSourceMaps &&
       leakedSecrets.length === 0 &&
+      reaRecoveredAfter === 0 &&
       reg.status !== "regressed";
     console.log(`\n  result: ${ok ? "PASS" : "REVIEW"}`);
     process.exit(ok ? 0 : 1);
@@ -313,6 +337,31 @@ electron
     }
     const rec = await applyFuses(binary);
     console.log("reashield electron fuses: applied", JSON.stringify(rec));
+  });
+
+
+program
+  .command("tune")
+  .description("auto-tune the config to minimize measured recovery under a size budget")
+  .option("--config <path>", "config file path")
+  .option("--max-size <kb>", "size budget in KB", parseFloat)
+  .action(async (opts) => {
+    const { config, cwd } = await resolveConfig({ configPath: opts.config });
+    const before = readFileSync(path.resolve(cwd, config.input), "utf8");
+    const res = await tune(config, cwd, before, { maxSizeKb: opts.maxSize });
+    console.log("REAShield auto-tune (lower score = stronger, then cheaper)\n");
+    for (const c of [...res.candidates].sort((a, b) => a.score - b.score)) {
+      const mark = c === res.best ? "\u2605" : " ";
+      console.log(
+        `  ${mark} preset=${c.preset.padEnd(8)} decoys=${String(c.decoyCount).padStart(2)} ` +
+          `leak=${(c.stringLeak * 100).toFixed(1)}% secrets=${c.leakedSecrets} ` +
+          `size=${(c.sizeBytes / 1024).toFixed(1)}KB`,
+      );
+    }
+    console.log(
+      `\n  recommended: preset=${res.best.preset}, decoys.count=${res.best.decoyCount}, dynamicGraph=true`,
+    );
+    console.log("  verify against real REA with: reashield test --rea");
   });
 
 program.parseAsync(process.argv);

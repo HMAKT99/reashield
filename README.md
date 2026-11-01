@@ -17,9 +17,18 @@ engineering of your _own_ shipped JavaScript / npm artifact.**
 > someone else's machine can be.** A determined human analyst can still do it —
 > at much higher cost. REAShield never claims otherwise, and neither should you.
 >
-> The single biggest lever isn't a trick in this tool: **if logic must stay
-> secret, move it server-side so it never ships.** REAShield makes that a
-> first-class, one-line option (`mode: "relocate"`).
+> **On "unbreakable":** offline code can never be made unbreakable. If the user's
+> machine must execute it, the machine must contain it, so it can always be
+> extracted given effort — obfuscation, WASM and bytecode only raise the cost.
+> What REAShield delivers is **measured against the real attacker**: on the
+> example, REA (`rea-agents`) recovered **6 protected tokens** (the secret +
+> protected names) on a plain build and **0** after hardening (`test --rea`). That's the goal — automated
+> recovery driven to ~zero — not an impossible absolute.
+>
+> The single biggest lever isn't a trick in this tool: **the only truly
+> unrecoverable code is code you don't ship — run it server-side** (`mode:
+> "relocate"`). For an offline app that isn't an option, so REAShield maximizes
+> cost instead and proves it with the `--rea` harness.
 
 REAShield is **defensive-only, behavior-preserving, and transparent** (no hidden
 network calls, no phone-home). It hardens code _you own and ship_. It is not a

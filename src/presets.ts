@@ -26,6 +26,7 @@ export function layerDefaults(preset: Preset): LayerConfig {
       ...base,
       stringIndirection: true,
       dynamicChannels: true,
+      dynamicGraph: true, // computed dispatch: forces REA call-edges to "unresolved"
       decoys: { enabled: true, count: 5 },
     };
   }

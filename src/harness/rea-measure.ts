@@ -84,11 +84,21 @@ export interface CompareResult {
   rea: ReaResult;
 }
 
+export interface ReaSide {
+  nodes: number;
+  edges: number;
+  findings: number;
+  astNodes: number;
+  /** distinct protected tokens (names + secret strings) REA still recovers. */
+  recovered: number;
+  recoveredTokens: string[];
+}
+
 export interface ReaResult {
   available: boolean;
   note: string;
-  before?: { modules?: number; imports?: number };
-  after?: { modules?: number; imports?: number };
+  before?: ReaSide;
+  after?: ReaSide;
 }
 
 /** Static before/after comparison. Always available, no REA needed. */
@@ -125,22 +135,29 @@ export function compareStatic(
 export async function tryRea(
   beforeDir: string,
   afterDir: string,
+  tokens: string[] = [],
 ): Promise<ReaResult> {
-  const run = async (dir: string) => {
+  const uniq = [...new Set(tokens.filter((t) => t && t.length >= 3))];
+  const run = async (dir: string): Promise<ReaSide> => {
     const { stdout } = await pexec(
       "npx",
       ["-y", "rea-agents@latest", "analyze-javascript-application", dir, "--json"],
-      { timeout: 120_000, maxBuffer: 64 * 1024 * 1024 },
+      { timeout: 300_000, maxBuffer: 256 * 1024 * 1024 },
     );
     const json = JSON.parse(stdout);
-    // Be liberal about shape across rea-agents releases.
-    const modules =
-      json.modules?.length ?? json.graph?.nodes?.length ?? json.moduleCount;
-    const imports =
-      json.imports?.length ??
-      json.graph?.relationships?.length ??
-      json.relationshipCount;
-    return { modules, imports };
+    const nr = json.normalized_result ?? json;
+    const g = nr.graph ?? {};
+    const st = nr.statistics ?? {};
+    // Protected-token recovery: does REA's analysis still contain the name/secret?
+    const recoveredTokens = uniq.filter((t) => stdout.includes(t));
+    return {
+      nodes: Array.isArray(g.nodes) ? g.nodes.length : 0,
+      edges: Array.isArray(g.edges) ? g.edges.length : 0,
+      findings: st.findings ?? 0,
+      astNodes: st.visited_ast_nodes ?? 0,
+      recovered: recoveredTokens.length,
+      recoveredTokens,
+    };
   };
   try {
     const before = await run(beforeDir);
@@ -150,8 +167,9 @@ export async function tryRea(
     return {
       available: false,
       note:
-        "rea-agents not run (install it as a dev dep to measure against real REA): " +
-        String((e as Error).message).split("\n")[0],
+        "rea-agents not run: " +
+        (((e as { stderr?: string }).stderr || "").trim().split("\n").slice(-2).join(" | ") ||
+          String((e as Error).message).split("\n")[0]),
     };
   }
 }

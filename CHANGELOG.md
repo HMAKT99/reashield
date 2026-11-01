@@ -9,6 +9,20 @@ defeats most *automated* attempts. It does not make code impossible to reverse.
 
 ## [Unreleased]
 
+### Added
+- **Real-REA adversarial harness**: `reashield test --rea` now runs the actual
+  `rea-agents` against a clean before-bundle vs the hardened client and reports a
+  **recovery score** — protected tokens REA still recovers (measured 6 -> 0 on the
+  example). PASS now requires 0 recovered.
+- **`reashield tune`**: auto-tunes the config across a grid to minimize measured
+  recovery under a size budget.
+
+### Changed
+- `dynamicGraph` (computed dispatch) is now **default-on at `balanced`** — forces
+  REA's call-edges into "unresolved".
+- README/doctor wording clarified: offline code can't be unbreakable; REAShield
+  maximizes cost and proves it against real REA.
+
 ## [0.6.1] - 2026-11-01
 
 ### Added
