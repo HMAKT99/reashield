@@ -18,3 +18,11 @@ examples/**/*-server/
 prototypes/python/example/*.shielded.py
 prototypes/python/example/*.server.py
 prototypes/python/**/__pycache__/
+
+# python front-end
+python/.venv/
+python/**/dist_shielded/
+python/**/__pycache__/
+python/**/*.egg-info/
+python/.pytest_cache/
+*.pyc

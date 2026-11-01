@@ -1,0 +1,16 @@
+input = "app.py"
+output = "dist_shielded"
+preset = "balanced"
+seed = "auto"
+
+[[protect]]
+name = "license_check"
+mode = "relocate"
+
+[[protect]]
+name = "sealed_score"
+mode = "seal"
+
+[[protect]]
+name = "feature_gate"
+mode = "obfuscate"

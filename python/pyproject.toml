@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reashield"
+version = "0.1.0"
+description = "Defensive hardening that raises the cost of automated reverse engineering of your own shipped Python code. Not unbreakable — honest by design."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "Arun Kumar Thiagarajan" }]
+keywords = ["reverse-engineering", "hardening", "obfuscation", "defensive-security", "python"]
+dependencies = ["cryptography>=42"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+reashield = "reashield.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/HMAKT99/reashield"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
