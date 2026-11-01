@@ -58,6 +58,7 @@ const __shield = (() => {
     return (await res.json()).k;
   };
   const _keyCache = new Map();
+  let _authToken = null;
   async function _getKey(op){
     if (_keyCache.has(op)) return _keyCache.get(op);
     const k = await _keyTransport(op);
@@ -74,9 +75,11 @@ const __shield = (() => {
   }
   const _sealCache = new Map();
   return {
-    configure(o){ if(o && o.transport) _transport=o.transport; if(o && o.keyTransport) _keyTransport=o.keyTransport; },
+    configure(o){ if(o && o.transport) _transport=o.transport; if(o && o.keyTransport) _keyTransport=o.keyTransport; if(o && o.authToken) _authToken=o.authToken; },
     async call(op, args){
-      const r = await _transport({ op, d: __opaque(args) });
+      const payload = { op, d: __opaque(args) };
+      if (_authToken) payload.t = typeof _authToken === "function" ? await _authToken() : _authToken;
+      const r = await _transport(payload);
       return __unopaque(r.d);
     },
     async sealed(op, blob, params){
@@ -98,7 +101,7 @@ ${configureLine}
 
 /** Server-side handler + key store + adapter. */
 export function serverFiles(opts: {
-  adapter: "express" | "fastify" | "generic";
+  adapter: "express" | "fastify" | "web" | "generic";
   endpoint: string;
   keyEndpoint: string;
   wireKeyB64: string;
@@ -117,6 +120,9 @@ export function serverFiles(opts: {
   const core = `
 ${encodeHelperSource(opts.wireKeyB64)}
 
+const ENDPOINT = ${JSON.stringify(opts.endpoint)};
+const KEY_ENDPOINT = ${JSON.stringify(opts.keyEndpoint)};
+
 // The real logic for relocated features lives here and is never shipped to clients.
 export const handlers = {
 ${handlersEntries}
@@ -127,7 +133,18 @@ export const keys = {
 ${keyEntries}
 };
 
-export async function handle(payload){
+// Auth seam: YOU supply the verifier. Until you call setAuthVerifier, the
+// endpoint is OPEN — secure it (auth + TLS + rate limiting) before shipping.
+let __authVerify = null;
+export function setAuthVerifier(fn){ __authVerify = fn; }
+
+export class ShieldUnauthorized extends Error {}
+
+export async function handle(payload, ctx){
+  if (__authVerify) {
+    const ok = await __authVerify(payload && payload.t, ctx);
+    if (!ok) throw new ShieldUnauthorized("reashield: unauthorized");
+  }
   const fn = handlers[payload.op];
   if (!fn) throw new Error("reashield: unknown op");
   const args = __unopaque(payload.d);
@@ -139,6 +156,23 @@ export function getKey(op){
   const k = keys[op];
   if (!k) throw new Error("reashield: unknown sealed op");
   return k;
+}
+
+// Cross-runtime Web handler (Hono, Workers, Deno, Next route handlers, Bun...).
+export async function webHandler(request){
+  const url = new URL(request.url);
+  if (request.method === "POST" && url.pathname === ENDPOINT) {
+    try { return Response.json(await handle(await request.json(), { request })); }
+    catch (e) {
+      const status = e instanceof ShieldUnauthorized ? 401 : 400;
+      return Response.json({ error: String(e) }, { status });
+    }
+  }
+  if (request.method === "GET" && url.pathname === KEY_ENDPOINT) {
+    try { return Response.json({ k: getKey(url.searchParams.get("op")) }); }
+    catch (e) { return Response.json({ error: String(e) }, { status: 404 }); }
+  }
+  return new Response("not found", { status: 404 });
 }
 `.trim();
 

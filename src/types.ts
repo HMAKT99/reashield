@@ -25,7 +25,7 @@ export interface ServerConfig {
   enabled: boolean;
   /** Output dir for the generated server skeleton. Never ship this to users. */
   out: string;
-  adapter: "express" | "fastify" | "generic";
+  adapter: "express" | "fastify" | "web" | "generic";
   /** Single opaque endpoint all relocated calls funnel through. */
   endpoint: string;
   /** Endpoint that serves decryption keys for sealed modules. */

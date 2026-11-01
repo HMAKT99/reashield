@@ -47,7 +47,7 @@ module.exports = {
   server: {
     enabled: true,
     out: "server-shielded",
-    adapter: "express", // express | fastify | generic
+    adapter: "express", // express | fastify | web | generic
     endpoint: "/__s",
     keyEndpoint: "/__s/k",
     decoyCalls: false,

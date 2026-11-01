@@ -155,6 +155,28 @@ TLS. REAShield scaffolds the Express/Fastify wiring and an in-process handler
 for tests; **securing the endpoint is your responsibility** (it does not add
 auth for you).
 
+**Auth seam (you supply it).** Until you call `setAuthVerifier`, the endpoint is
+**open** — secure it before shipping. The client attaches a token from a source
+you configure; the server verifies it:
+
+```js
+// server
+import { setAuthVerifier } from "./server-shielded/handlers.js";
+setAuthVerifier(async (token, ctx) => (await myAuth.verify(token)) === true);
+
+// client (wire once at startup)
+__configureShield({ authToken: () => myAuth.currentToken() }); // (or globalThis.__configureShield in plugin builds)
+```
+
+**Adapters.** `adapter: "express" | "fastify" | "web" | "generic"`. The skeleton
+always exports a cross-runtime `webHandler(request: Request): Promise<Response>`
+that drops into Hono, Cloudflare Workers, Deno, Bun, or a Next.js route handler:
+
+```js
+import { webHandler } from "./server-shielded/handlers.js";
+export const POST = (req) => webHandler(req); // Next.js app route, Workers fetch, ...
+```
+
 Relocated/sealed functions become `async` (they do a round-trip). Make sure your
 call sites `await` them. They must be **self-contained** (no closure over
 client-only module state).
