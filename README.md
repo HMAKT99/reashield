@@ -5,38 +5,40 @@
 [![CI](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml/badge.svg)](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml)
 [![python-ci](https://github.com/HMAKT99/reashield/actions/workflows/python-ci.yml/badge.svg)](https://github.com/HMAKT99/reashield/actions/workflows/python-ci.yml)
 
-**Drop-in defensive hardening that starves automated, agent-driven reverse
-engineering of your _own_ shipped JavaScript / npm artifact.**
+![REAShield demo — REA recovers 6 protected tokens, 0 after hardening](https://raw.githubusercontent.com/HMAKT99/reashield/main/assets/demo.gif)
 
-> ### Honest promise & limits — read this first
-> REAShield **raises the cost** of reverse engineering and **defeats most
-> _automated_ attempts** (tools like [REA](https://github.com/morluto/rea) that
-> statically reconstruct a module graph and reason over a summary of it).
->
-> It does **not** make your code impossible to reverse. **Nothing that runs on
-> someone else's machine can be.** A determined human analyst can still do it —
-> at much higher cost. REAShield never claims otherwise, and neither should you.
->
-> **On "unbreakable":** offline code can never be made unbreakable. If the user's
-> machine must execute it, the machine must contain it, so it can always be
-> extracted given effort — obfuscation, WASM and bytecode only raise the cost.
-> What REAShield delivers is **measured against the real attacker**: on the
-> example, REA (`rea-agents`) recovered **6 protected tokens** (the secret +
-> protected names) on a plain build and **0** after hardening (`test --rea`).
-> Independently, **webcrack** fully deobfuscated the hardened client (1103
-> changes, string array decoded) and still recovered **0 protected tokens** —
-> because they were relocated/sealed, not merely obfuscated. That's the goal — automated
-> recovery driven to ~zero — not an impossible absolute.
->
-> The single biggest lever isn't a trick in this tool: **the only truly
-> unrecoverable code is code you don't ship — run it server-side** (`mode:
-> "relocate"`). For an offline app that isn't an option, so REAShield maximizes
-> cost instead and proves it with the `--rea` harness.
+> ## REA reverse-engineers any app. REAShield makes it come back empty.
 
-REAShield is **defensive-only, behavior-preserving, and transparent** (no hidden
-network calls, no phone-home). It hardens code _you own and ship_. It is not a
-tool for analyzing, hiding, or tampering with anyone else's software, and it
-will not help bypass someone else's DRM, license checks, or anti-cheat.
+[REA](https://github.com/morluto/rea) — the #1 trending repo on GitHub — lets an AI
+agent reverse-engineer your shipped app in one command, no source code needed.
+**REAShield is the defensive counter:** drop it into your build and it hardens what
+you ship (JavaScript / Electron / Python) so automated reverse engineering comes
+back empty.
+
+### Measured against the real attacker — not claimed
+
+- **REA** (`rea-agents`) recovered **6 protected tokens → 0** after hardening.
+- **webcrack** fully deobfuscated the hardened client (1103 changes, string array
+  decoded) and *still* recovered **0** — because the secrets were relocated/sealed,
+  not just obfuscated.
+
+```bash
+npm i -D reashield
+npx reashield build        # hardened client + generated server skeleton
+npx reashield test --rea   # run the REAL REA on before/after; score what it recovers
+```
+
+Python front-end: `pip install reashield` (see [`python/`](./python)).
+
+> ### Honest promise & limits — read this
+> **Offline code can never be made unbreakable.** If a machine must run it, the
+> machine has it, so it can always be extracted given effort — obfuscation, WASM and
+> bytecode only raise the cost. REAShield's job is to defeat the **automated** attack
+> (the one REA just handed everyone) and raise a human analyst's cost from minutes to
+> days. The only *truly* unrecoverable code is code you don't ship — run it
+> server-side (`mode: "relocate"`). Defensive-only, behavior-preserving, transparent
+> (no phone-home). It hardens code **you own and ship**; it won't help bypass anyone
+> else's DRM, license checks, or anti-cheat.
 
 ---
 

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#282a36"/>
+      <stop offset="1" stop-color="#1b1c25"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f1fa8c"/>
+      <stop offset="1" stop-color="#50fa7b"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1278" height="638" fill="none" stroke="#44475a" stroke-width="2"/>
+
+  <g transform="translate(96,96)">
+    <path d="M44 0 L88 18 V52 C88 92 66 116 44 128 C22 116 0 92 0 52 V18 Z"
+          fill="#bd93f9" opacity="0.18" stroke="#bd93f9" stroke-width="3"/>
+    <path d="M26 60 L40 76 L66 44" fill="none" stroke="#50fa7b" stroke-width="7"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="212" y="146" font-size="76" font-weight="bold" fill="#f8f8f2">REAShield</text>
+  <text x="214" y="190" font-size="26" fill="#8be9fd">The shield against <tspan font-weight="bold">Reverse Engineer Anything</tspan></text>
+
+  <text x="96" y="312" font-size="28" fill="#6272a4" letter-spacing="2">PROTECTED LOGIC REA CAN RECOVER</text>
+  <g filter="url(#glow)">
+    <text x="92" y="460" font-size="180" font-weight="bold" fill="#f1fa8c">6</text>
+    <text x="298" y="442" font-size="140" font-weight="bold" fill="url(#arrow)">&#8594;</text>
+    <text x="462" y="460" font-size="180" font-weight="bold" fill="#50fa7b">0</text>
+  </g>
+  <text x="96" y="512" font-size="25" fill="#6272a4">measured against the real REA &#183; webcrack deobfuscated everything, still <tspan fill="#50fa7b" font-weight="bold">0</tspan></text>
+
+  <g transform="translate(772,250)">
+    <rect x="0" y="0" width="412" height="176" rx="16" fill="#1e1f2b" stroke="#44475a" stroke-width="2"/>
+    <text x="26" y="52" font-size="21" font-family="Menlo, monospace" fill="#6272a4">$ <tspan fill="#f8f8f2">npx reashield build</tspan></text>
+    <text x="26" y="92" font-size="21" font-family="Menlo, monospace" fill="#6272a4">$ <tspan fill="#f8f8f2">npx reashield test --rea</tspan></text>
+    <text x="26" y="142" font-size="21" font-family="Menlo, monospace" fill="#50fa7b">result: PASS  &#10003;</text>
+  </g>
+
+  <text x="96" y="596" font-size="23" font-family="Menlo, monospace" fill="#8892b8">npm i -D reashield  &#183;  pip install reashield  &#183;  github.com/HMAKT99/reashield</text>
+</svg>
