@@ -9,6 +9,11 @@ defeats most *automated* attempts. It does not make code impossible to reverse.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-05
+
+### Added
+- MCP registry metadata: `mcpName` in package.json + `server.json`, so REAShield can be published to the official MCP Registry (and propagate to mcp.so / Glama / PulseMCP).
+
 ## [0.7.0] - 2026-11-05
 
 ### Added
@@ -130,7 +135,8 @@ Capstone release — the full planned roadmap, shipped and tested.
 - Measurement harness (`rea-agents` when installed, static proxy otherwise) and a
   regression gate pinned across `rea-agents` versions, with a CI workflow.
 
-[Unreleased]: https://github.com/HMAKT99/reashield/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/HMAKT99/reashield/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/HMAKT99/reashield/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/HMAKT99/reashield/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/HMAKT99/reashield/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/HMAKT99/reashield/compare/v0.5.0...v0.6.0
