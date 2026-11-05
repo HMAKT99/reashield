@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.HMAKT99/reashield",
   "description": "Defensive hardening against automated reverse engineering - the defensive mirror of REA.",
   "version": "0.7.1",
