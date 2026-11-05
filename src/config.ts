@@ -45,7 +45,7 @@ export interface ResolveOptions {
 export async function resolveConfig(
   opts: ResolveOptions = {},
 ): Promise<{ config: ShieldConfig; cwd: string; configPath: string }> {
-  const cwd = opts.cwd ?? process.cwd();
+  const cwd = path.resolve(opts.cwd ?? process.cwd());
 
   let configPath = opts.configPath
     ? path.resolve(cwd, opts.configPath)

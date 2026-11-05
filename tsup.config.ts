@@ -5,6 +5,7 @@ export default defineConfig({
     index: "src/index.ts",
     cli: "src/cli.ts",
     plugins: "src/plugins/index.ts",
+    mcp: "src/mcp.ts",
     electron: "src/electron/index.ts",
   },
   format: ["esm", "cjs"],

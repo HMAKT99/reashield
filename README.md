@@ -42,6 +42,25 @@ Python front-end: `pip install reashield` (see [`python/`](./python)).
 
 ---
 
+## Use it from an AI agent (MCP server)
+
+REA is an MCP server that hands an agent *reverse-engineering* tools. REAShield
+ships the **defensive mirror** — an MCP server that hands an agent **hardening**
+tools, so Claude Code / Cursor can inspect, harden, and measure a project from chat.
+
+Tools: **`reashield_doctor`** (what's exposed), **`reashield_harden`** (harden it),
+**`reashield_measure`** (run the real REA and report the recovery score).
+
+```bash
+# Claude Code
+claude mcp add reashield -- npx -y reashield-mcp
+
+# Cursor / other MCP clients — add to your MCP config:
+# { "mcpServers": { "reashield": { "command": "npx", "args": ["-y", "reashield-mcp"] } } }
+```
+
+---
+
 ## Two front-ends, one architecture
 
 REAShield is a monorepo. The same durable idea — **move secrets off-device, turn

@@ -10,6 +10,12 @@ defeats most *automated* attempts. It does not make code impossible to reverse.
 ## [Unreleased]
 
 ### Added
+- **MCP server** (`reashield-mcp`) — the defensive mirror of REA. Exposes
+  `reashield_doctor`, `reashield_harden`, and `reashield_measure` tools so an agent
+  (Claude Code / Cursor) can inspect, harden, and measure a project from chat.
+
+
+### Added
 - **Real-REA adversarial harness**: `reashield test --rea` now runs the actual
   `rea-agents` against a clean before-bundle vs the hardened client and reports a
   **recovery score** — protected tokens REA still recovers (measured 6 -> 0 on the
