@@ -1,6 +1,6 @@
 {
   "name": "reashield",
-  "version": "0.7.2",
+  "version": "0.7.1",
   "description": "Drop-in defensive hardening that starves automated, agent-driven reverse engineering (e.g. REA) of your own shipped JavaScript/npm artifact. Raises cost; never claims impossibility.",
   "license": "MIT",
   "type": "module",
