@@ -61,6 +61,14 @@ claude mcp add reashield -- npx -y reashield-mcp
 
 ---
 
+## As a skill
+
+REAShield also ships an agent **skill** — a process-first workflow for hardening
+shipped code against reverse engineering, meant to be followed by Claude Code /
+Cursor: [`skills/protect-shipped-code`](./skills/protect-shipped-code/SKILL.md).
+
+---
+
 ## Two front-ends, one architecture
 
 REAShield is a monorepo. The same durable idea — **move secrets off-device, turn
