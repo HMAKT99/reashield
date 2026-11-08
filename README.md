@@ -39,8 +39,6 @@ npx reashield test --rea   # run the REAL REA on before/after; score what it rec
   decode 3 decoy-embedded names; the fix is documented in
   [`evidence/README.md`](./evidence/README.md).)
 
-Python front-end: `pip install reashield` (see [`python/`](./python)).
-
 > ### Honest promise & limits — read this
 > **Offline code can never be made unbreakable.** If a machine must run it, the
 > machine has it, so it can always be extracted given effort — obfuscation, WASM and
