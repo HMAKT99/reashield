@@ -26,3 +26,6 @@ python/**/__pycache__/
 python/**/*.egg-info/
 python/.pytest_cache/
 *.pyc
+
+# MCP registry auth tokens (never commit)
+.mcpregistry_*_token

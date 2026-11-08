@@ -9,6 +9,8 @@ defeats most *automated* attempts. It does not make code impossible to reverse.
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-08
+
 ### Fixed
 - **Decoy name leak (found by the committed REA/webcrack evidence).** Decoy clusters
   seeded a dead `.length` string with a *real* protected name (e.g.
