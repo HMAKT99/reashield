@@ -6,7 +6,7 @@ _VERBS = ["validate", "verify", "resolve", "sync", "issue", "renew", "check", "d
 _NOUNS = ["license", "pricing", "entitlement", "quota", "token", "policy", "tier"]
 
 
-def decoy_source(count: int, poly, protected: list[str]) -> tuple[str, list[str]]:
+def decoy_source(count: int, poly) -> tuple[str, list[str]]:
     if count <= 0:
         return "", []
     names: list[str] = []
@@ -23,8 +23,9 @@ def decoy_source(count: int, poly, protected: list[str]) -> tuple[str, list[str]
         members.append(fn)
     for i, fn in enumerate(members):
         nxt = members[(i + 1) % len(members)]
-        seed = poly.pick(protected) if protected else "feature"
-        s = f'"route:/api/{seed.lower()}/{poly.pick(_NOUNS)}"'
+        # Opaque, decoy-derived route. Must NOT embed a real protected name: a
+        # deobfuscator would surface it verbatim (see src/layers/decoys.ts).
+        s = f'"route:/api/{poly.pick(_NOUNS)}/{poly.pick(_NOUNS)}"'
         lines.append(
             f"def {fn}(_x=0):\n"
             f"    if __REASHIELD_DECOY_NEVER__:\n"

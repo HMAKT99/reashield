@@ -9,6 +9,18 @@ defeats most *automated* attempts. It does not make code impossible to reverse.
 
 ## [Unreleased]
 
+### Fixed
+- **Decoy name leak (found by the committed REA/webcrack evidence).** Decoy clusters
+  seeded a dead `.length` string with a *real* protected name (e.g.
+  `"licenseCheck:5a319f"`). The name carried no graph value but a string-array
+  deobfuscator (webcrack) could decode it back to plaintext. Decoy keys are now
+  opaque, theme-derived labels; webcrack recovery of protected tokens drops from 3 to
+  **0**. See [`evidence/`](./evidence/).
+
+### Added
+- **`evidence/`** — raw, reproducible output of `reashield test --rea` on the sample
+  app (real `rea-agents` + webcrack), with exact versions and a plain-English reading.
+
 ## [0.7.2] - 2026-11-05
 
 ### Changed

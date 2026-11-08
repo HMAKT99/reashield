@@ -33,11 +33,11 @@ npx reashield test --rea   # run the REAL REA on before/after; score what it rec
 - **Against REA — the attack this defends against: 6 protected tokens → 0.** REA is
   static; the relocated/sealed bodies aren't in the artifact and the rest is left
   unresolved.
-- **Against webcrack** (a dedicated deobfuscator, as a stress test): **0 secret
-  values recovered** — `RSHLD-PRIVATE-ALGO-7731` and the weights are off-device, so
-  there's nothing to decode. It *can* still decode **3 of the 4 protected *names***
-  (routing labels shipped encoded) back to plaintext. We show you this split rather
-  than claim a flat "0" — see [`evidence/README.md`](./evidence/README.md).
+- **Against webcrack** (a dedicated deobfuscator, as a stress test): **0 recovered** —
+  neither secret values nor names. The secrets are off-device; the names are stripped
+  from the client. (This caught a real leak first — an earlier build let webcrack
+  decode 3 decoy-embedded names; the fix is documented in
+  [`evidence/README.md`](./evidence/README.md).)
 
 Python front-end: `pip install reashield` (see [`python/`](./python)).
 

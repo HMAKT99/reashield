@@ -20,6 +20,6 @@ REAShield measurement (before = source, after = hardened client)
   protected tokens REA recovers           6           0
 
   REA recovery score (protected tokens): 6 -> 0
-  webcrack recovers: 3 protected token(s) (licenseCheck, sealedCalc, featureGate)
+  webcrack recovers: 0 protected token(s) — none
 
   result: PASS

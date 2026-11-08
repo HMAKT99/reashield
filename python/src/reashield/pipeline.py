@@ -73,9 +73,7 @@ def harden(source: str, config: ShieldConfig) -> Artifacts:
     client = header + client_body + "\n"
 
     if config.layers.decoys_enabled and config.layers.decoy_count > 0:
-        dsrc, names = decoy_source(
-            config.layers.decoy_count, poly, [p.name for p in config.protect]
-        )
+        dsrc, names = decoy_source(config.layers.decoy_count, poly)
         client += "\n" + dsrc
         state.decoy_names = names
 

@@ -133,12 +133,7 @@ export function finalizeCode(
   let decoyNames: string[] = [];
   let decoyEdges = 0;
   if (config.layers.decoys.enabled && config.layers.decoys.count > 0) {
-    const r = injectDecoys(
-      code,
-      config.layers.decoys.count,
-      poly,
-      config.protect.map((p) => p.name),
-    );
+    const r = injectDecoys(code, config.layers.decoys.count, poly);
     code = r.code;
     decoyNames = r.names;
     decoyEdges = r.edges;

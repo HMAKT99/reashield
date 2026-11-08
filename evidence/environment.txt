@@ -1,7 +1,7 @@
 REAShield evidence — environment
 Captured: 2026-11-08 (UTC)
 
-reashield     0.7.1 (local build in this repo)
+reashield     0.7.1 + opaque-decoy-key fix (local build in this repo)
 rea-agents    6.8.0  (the real REA, run via: npx -y rea-agents@latest)
 webcrack      2.16.0
 node          v24.9.0

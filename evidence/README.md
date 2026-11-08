@@ -36,30 +36,32 @@ bundle it recovered all **6** protected tokens. On the hardened client it recove
 dispatch/string-indirection leave the rest unresolved. This is the result that
 matters, and it's real.
 
-### 2. Against webcrack — a dedicated deobfuscator: secrets **0**, names **3**
+### 2. Against webcrack — a dedicated deobfuscator: **0 recovered**
 
 To stress-test honestly, we also ran [webcrack](https://github.com/j4k0xb/webcrack),
-which decodes obfuscated string arrays (it made 1000+ changes here). Full result:
+which decodes obfuscated string arrays (it made 1000+ changes here). It recovered
+**0** protected tokens — neither secret values nor names:
 
-- **Secret values recovered: 0.** `RSHLD-PRIVATE-ALGO-7731` and the weights never
-  appear — relocation and sealing moved them off the client entirely, so no amount
-  of deobfuscation brings them back.
-- **Protected *names* recovered: 3** (`licenseCheck`, `sealedCalc`, `featureGate`).
-  These are used as routing labels / in-place identifiers and are shipped
-  **encoded** (raw `grep` of the client finds 0), but webcrack's string-array decode
-  reconstructs them to plaintext.
+- **Secret values: 0.** `RSHLD-PRIVATE-ALGO-7731` and the weights are relocated/
+  sealed off the client, so there is nothing in the artifact to decode.
+- **Protected names: 0.** They are stripped from the shipped client, and nothing
+  else embeds them in plaintext.
 
-**So the honest claim is:** your secret *logic and values* survive even a dedicated
-deobfuscator, because they aren't in the client to decode. What a deobfuscator can
-still surface are the *names* of the relocated operations — routing labels, not the
-secrets themselves. If even those names must not leak, use opaque op-ids (a tracked
-improvement). We'd rather show you this than claim a flat "recovered 0."
+> **How this evidence improved the tool.** An earlier build of this exact measurement
+> showed webcrack recovering **3 names** (`licenseCheck`, `sealedCalc`, `featureGate`).
+> Re-running the real tools caught it: the decoy generator was seeding a dead
+> `.length` string with a *real* protected name (e.g. `"licenseCheck:5a319f"`), which
+> a string-array decoder reconstructs verbatim. Those strings carried no graph value,
+> so we switched decoy keys to opaque, theme-derived labels
+> ([`src/layers/decoys.ts`](../src/layers/decoys.ts)). webcrack now recovers 0. This
+> is the whole reason the measurement is committed rather than claimed.
 
-### Why REA recovers nothing but webcrack recovers the names
+### Why REA recovers nothing
 
-REA reasons over a graph *summary* and never surfaces the encoded routing strings;
-webcrack's only job is to decode those strings. Different tools, different results —
-which is exactly why REAShield ships the measurement instead of a marketing number.
+REA reasons over a graph *summary* and never runs the app, so relocated/sealed
+bodies and computed dispatch leave it with nothing to resolve. We ship the harness
+(against both REA and a deobfuscator) instead of a marketing number — so a leak like
+the one above gets caught by the evidence, not by your users.
 
 ## Honest limits
 

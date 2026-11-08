@@ -43,7 +43,6 @@ export function injectDecoys(
   code: string,
   count: number,
   poly: Polymorph,
-  protectedNames: string[],
 ): DecoyResult {
   if (count <= 0) return { code, names: [], edges: 0 };
 
@@ -79,7 +78,11 @@ export function injectDecoys(
       const role = roles[i % roles.length];
       const route = `"route:/api/${theme}/${role}"`;
       const ipc = `"ipc:${theme}:${role}"`;
-      const seed = protectedNames.length ? poly.pick(protectedNames) : theme;
+      // Opaque, self-consistent key for the fake feature. Must NOT embed real
+      // protected names: a deobfuscator decodes string arrays, so a real name
+      // planted here would leak verbatim (it has no graph value — it's a dead
+      // `.length` constant). Keep it coherent with the decoy's own theme/role.
+      const seed = `${theme}_${role}`;
       edges += 2; // -> next, -> cfg
       blocks.push(
         `function ${fn}(_x){ if(${NEVER}){ ${TRIP}=(${TRIP}|0)+1; ` +
