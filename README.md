@@ -15,18 +15,29 @@ agent reverse-engineer your shipped app in one command, no source code needed.
 you ship (JavaScript / Electron / Python) so automated reverse engineering comes
 back empty.
 
-### Measured against the real attacker — not claimed
+### Don't trust the claim — reproduce it
 
-- **REA** (`rea-agents`) recovered **6 protected tokens → 0** after hardening.
-- **webcrack** fully deobfuscated the hardened client (1103 changes, string array
-  decoded) and *still* recovered **0** — because the secrets were relocated/sealed,
-  not just obfuscated.
+REAShield ships a harness that runs the **real REA** against your own before/after
+build and scores what it recovers. The raw output for the bundled sample is
+committed in [`evidence/`](./evidence/) — re-run it and hold us to it:
 
 ```bash
 npm i -D reashield
 npx reashield build        # hardened client + generated server skeleton
 npx reashield test --rea   # run the REAL REA on before/after; score what it recovers
 ```
+
+**Measured result** (sample app, `rea-agents` 6.8.0 — full logs in
+[`evidence/rea-run.txt`](./evidence/rea-run.txt)):
+
+- **Against REA — the attack this defends against: 6 protected tokens → 0.** REA is
+  static; the relocated/sealed bodies aren't in the artifact and the rest is left
+  unresolved.
+- **Against webcrack** (a dedicated deobfuscator, as a stress test): **0 secret
+  values recovered** — `RSHLD-PRIVATE-ALGO-7731` and the weights are off-device, so
+  there's nothing to decode. It *can* still decode **3 of the 4 protected *names***
+  (routing labels shipped encoded) back to plaintext. We show you this split rather
+  than claim a flat "0" — see [`evidence/README.md`](./evidence/README.md).
 
 Python front-end: `pip install reashield` (see [`python/`](./python)).
 

@@ -1,0 +1,20 @@
+REAShield evidence — environment
+Captured: 2026-11-08 (UTC)
+
+reashield     0.7.1 (local build in this repo)
+rea-agents    6.8.0  (the real REA, run via: npx -y rea-agents@latest)
+webcrack      2.16.0
+node          v24.9.0
+npm           11.6.0
+platform      darwin (macOS)
+
+Target measured: examples/sample-package
+  before = clean esbuild bundle of src/index.js
+  after  = dist-shielded/index.js (hardened client) + server-shielded/ (off-device)
+Config: examples/sample-package/shield.config.cjs (preset: balanced)
+
+Protected items in the sample:
+  licenseCheck  mode=relocate   (body + secret "RSHLD-PRIVATE-ALGO-7731" moved off-device)
+  sealedCalc    mode=seal       (shipped as ciphertext; weights "0.6177:0.3823" not in client)
+  pricingLogic  mode=wasm->obfuscate fallback
+  featureGate   mode=obfuscate  (hardened in place)

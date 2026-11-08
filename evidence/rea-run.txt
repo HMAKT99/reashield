@@ -1,0 +1,25 @@
+REAShield measurement (before = source, after = hardened client)
+
+  metric            before       after
+  import edges           0           0
+  require()              0           0
+  source maps        false       false
+  string leak         100%        0.0%
+
+  protected names leaked into client: (none)
+  off-device (not in client at all): licenseCheck, sealedCalc
+  secret strings removed from client: 3 (leaked: 0)
+  decoys injected: 7
+
+  regression: pass — within baseline tolerance
+
+  running real rea-agents (this can take a few minutes)…
+  metric                             before       after
+  REA graph nodes                         6           7
+  REA graph edges                         5           6
+  protected tokens REA recovers           6           0
+
+  REA recovery score (protected tokens): 6 -> 0
+  webcrack recovers: 3 protected token(s) (licenseCheck, sealedCalc, featureGate)
+
+  result: PASS
