@@ -1,0 +1,24 @@
+# Example: harden your build and fail CI if REA recovers your protected code.
+# Copy to .github/workflows/ in YOUR repo. Kept here (not in .github/workflows)
+# so it does not run in the reashield repo itself.
+name: reashield
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  schedule:
+    - cron: "0 6 * * 1" # weekly: catches newer REA releases
+
+jobs:
+  harden-and-measure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm i -D reashield
+      - run: npx reashield build
+      # Runs the real REA on before/after; exits non-zero on regression or leakage.
+      - run: npx reashield test --rea
