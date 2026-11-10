@@ -5,15 +5,20 @@
 [![CI](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml/badge.svg)](https://github.com/HMAKT99/reashield/actions/workflows/ci.yml)
 [![python-ci](https://github.com/HMAKT99/reashield/actions/workflows/python-ci.yml/badge.svg)](https://github.com/HMAKT99/reashield/actions/workflows/python-ci.yml)
 
+> ## REA can reverse-engineer your shipped app. REAShield protects your IP — so it returns nothing.
+
+```bash
+npm i -D reashield && npx reashield build   # hardened client + server skeleton
+```
+
 ![REAShield demo — REA recovers 6 protected tokens, 0 after hardening](https://raw.githubusercontent.com/HMAKT99/reashield/main/assets/demo.gif)
 
-> ## REA reverse-engineers any app. REAShield makes it come back empty.
-
-[REA](https://github.com/morluto/rea) — the #1 trending repo on GitHub — lets an AI
-agent reverse-engineer your shipped app in one command, no source code needed.
-**REAShield is the defensive counter:** drop it into your build and it hardens what
-you ship (JavaScript / Electron / Python) so automated reverse engineering comes
-back empty.
+[REA](https://github.com/morluto/rea) lets an AI agent rebuild a feature of your
+shipped JavaScript / Electron app with no source code. **REAShield shields your IP
+against it:** secret logic moves off-device and what a static agent reads is
+stripped, so the automated attack has nothing to recover (6 tokens → 0 in the
+measured sample below). (A Python front-end
+lives in [`python/`](./python), repo-only for now.)
 
 ### Don't trust the claim — reproduce it
 
@@ -27,7 +32,7 @@ npx reashield build        # hardened client + generated server skeleton
 npx reashield test --rea   # run the REAL REA on before/after; score what it recovers
 ```
 
-**Measured result** (sample app, `rea-agents` 6.8.0 — full logs in
+**Measured result** (one bundled sample app, `rea-agents` 6.8.0 — full logs in
 [`evidence/rea-run.txt`](./evidence/rea-run.txt)):
 
 - **Against REA — the attack this defends against: 6 protected tokens → 0.** REA is
